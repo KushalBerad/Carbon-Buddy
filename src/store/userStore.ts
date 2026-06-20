@@ -17,7 +17,8 @@ export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
       profile: undefined,
-      sidebarOpen: true,
+      // sidebarOpen: true,
+      sidebarOpen: false,
       currentView: 'landing',
       setProfile: (profile) => set({ profile }),
       setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
@@ -37,10 +38,17 @@ export const useUserStore = create<UserState>()(
             },
           };
         }),
-      resetUser: () => set({ profile: undefined, currentView: 'landing', sidebarOpen: true }),
+      resetUser: () => set({ 
+        profile: undefined, 
+        currentView: 'landing', 
+        sidebarOpen: false }),
     }),
     {
       name: 'carbon-buddy-user-store',
+
+      partialize: (state) => ({
+        profile: state.profile
+      })
     }
   )
 );

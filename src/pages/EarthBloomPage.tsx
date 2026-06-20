@@ -205,24 +205,7 @@ export const EarthBloomPage = React.memo(function EarthBloomPage({
               {/* Trunk and leaves drawn dynamically inside SVG based on score */}
               <svg className="w-56 h-56 z-10 select-none pb-4" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 {/* Main Stem trunk growing taller and branching out higher with points */}
-                <motion.path
-                  id="plant-trunk"
-                  d={
-                    score < 50
-                      ? "M 50 90 Q 50 80 50 75"
-                      : score < 150
-                      ? "M 50 90 Q 52 70 48 55"
-                      : score < 300
-                      ? "M 50 90 Q 52 65 46 45 C 46 45 42 35 34 38 M 46 45 Q 52 35 62 30"
-                      : "M 50 90 Q 54 60 45 35 C 45 35 38 25 25 30 M 45 35 Q 55 20 70 15 M 48 55 Q 65 50 72 42"
-                  }
-                  stroke="#78350F"
-                  strokeWidth={score < 50 ? "4" : score < 150 ? "5" : "6"}
-                  strokeLinecap="round"
-                  animate={{ d: score < 50 ? "M 50 90 Q 50 82 50 74" : score < 150 ? "M 50 90 Q 53 71 47 53" : "M 50 90 Q 54 60 45 35 C 45 35 38 25 27 28 M 45 35 Q 55 20 73 17" }}
-                  transition={{ duration: 1.5, ease: 'easeOut' }}
-                />
-
+                
                 {/* Leaves unfolding based on user points milestone checkpoints */}
                 {score >= 20 && (
                   <motion.path

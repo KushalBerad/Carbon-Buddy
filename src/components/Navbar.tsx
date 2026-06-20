@@ -77,7 +77,7 @@ export function Navbar({
     {
       id: 'notif-streak',
       title: 'Streak Active',
-      description: streakDays > 1 
+      description: streakDays > 1
         ? `Green streak verified at ${streakDays} days straight! Keep logging habits.`
         : 'Begin logging eco habits to start building your dynamic multiplier streak!',
       icon: <Flame className="w-4 h-4 text-orange-500 fill-orange-500/10" />,
@@ -89,7 +89,7 @@ export function Navbar({
     {
       id: 'notif-meal',
       title: 'Sustainable Alternative',
-      description: suggestedMeal 
+      description: suggestedMeal
         ? `Swap ${suggestedMeal.originalName} with ${suggestedMeal.alternativeName} for a ${suggestedMeal.carbonOffsetGrams}g benefit.`
         : 'Explore our certified custom nutrition alternatives to slash grocery emission footprints.',
       icon: <Trophy className="w-4 h-4 text-teal-400" />,
@@ -100,10 +100,10 @@ export function Navbar({
     },
     {
       id: 'notif-habits',
-      title: habitsRemaining === 0 
-        ? 'Eco Score Perfect!' 
+      title: habitsRemaining === 0
+        ? 'Eco Score Perfect!'
         : 'Daily Habits Logger',
-      description: habitsRemaining === 0 
+      description: habitsRemaining === 0
         ? 'Awesome work! You completed all scheduled green habits for today.'
         : `You have ${habitsRemaining} remaining green habit log${habitsRemaining > 1 ? 's' : ''} on today's list.`,
       icon: <CheckCircle2 className="w-4 h-4 text-indigo-500" />,
@@ -115,7 +115,7 @@ export function Navbar({
     {
       id: 'notif-badges',
       title: 'Badge Milestone progress',
-      description: pointsToNext > 0 
+      description: pointsToNext > 0
         ? `Earn ${pointsToNext} points to hit level ${currentLevel + 1} and claim premium rare badges.`
         : `Level ${currentLevel + 1} milestone reached! Save any metric to complete transition.`,
       icon: <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500/15" />,
@@ -144,19 +144,25 @@ export function Navbar({
             </button>
           )}
 
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentView('landing')}
+            className="flex items-center gap-2 cursor-pointer"
+            aria-label="Go to landing page"
+          >
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-md shadow-emerald-500/10">
               <Leaf className="w-5 h-5 text-white" />
             </div>
+
             <div className="flex flex-col">
               <span className="text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent leading-none">
                 Carbon Buddy
               </span>
+
               <span className="text-[10px] text-zinc-500 dark:text-zinc-300 font-medium mt-0.5">
                 Live Sustainably
               </span>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Dynamic Center Indicators / Gamified Info */}
@@ -183,11 +189,10 @@ export function Navbar({
                 setDropdownOpen(!dropdownOpen);
                 setHasUnread(false);
               }}
-              className={`relative p-2 rounded-xl border transition-all text-zinc-650 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer outline-none ${
-                dropdownOpen 
-                  ? 'bg-zinc-100 border-zinc-300 dark:bg-zinc-800 dark:border-zinc-700' 
+              className={`relative p-2 rounded-xl border transition-all text-zinc-650 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer outline-none ${dropdownOpen
+                  ? 'bg-zinc-100 border-zinc-300 dark:bg-zinc-800 dark:border-zinc-700'
                   : 'border-zinc-150/40 dark:border-zinc-800/80'
-              }`}
+                }`}
               aria-label="Open notifications center panel"
             >
               <Bell className="w-4 h-4" />

@@ -15,7 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 
 interface SidebarItem {
@@ -49,7 +49,14 @@ export function Sidebar({
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : isOpenStore;
   const onToggle = propOnToggle || (() => onToggleStore(!isOpenStore));
+
   const activeId = propActiveId !== undefined ? propActiveId : activeIdStore;
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      onToggleStore(false);
+    }
+  }, [activeId]);
+
   const onSelect = propOnSelect || onSelectStore;
   const streakDays = propStreakDays !== undefined ? propStreakDays : (profile?.streak ?? 1);
   // Navigation tabs matching Core features requested
@@ -70,9 +77,8 @@ export function Sidebar({
       {/* Desktop Sidebar */}
       <aside
         id={id}
-        className={`fixed top-16 bottom-0 left-0 z-35 bg-white dark:bg-zinc-900 border-r border-zinc-150/50 dark:border-zinc-800/50 flex flex-col transition-all duration-300 ${
-          isOpen ? 'w-64' : 'w-20'
-        } hidden lg:flex`}
+        className={`fixed top-16 bottom-0 left-0 z-35 bg-white dark:bg-zinc-900 border-r border-zinc-150/50 dark:border-zinc-800/50 flex flex-col transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'
+          } hidden lg:flex`}
       >
         {/* Scrollable Navigation section */}
         <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto">
@@ -82,11 +88,10 @@ export function Sidebar({
               <button
                 key={item.id}
                 onClick={() => onSelect(item.id)}
-                className={`w-full flex items-center justify-start rounded-xl p-3 transition-all duration-200 cursor-pointer relative outline-none group ${
-                  isActive
-                    ? 'text-emerald-700 bg-emerald-500/10 dark:text-emerald-450 dark:bg-emerald-500/5 font-semibold'
-                    : 'text-zinc-650 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
-                }`}
+                className={`w-full flex items-center justify-start rounded-xl p-3 transition-all duration-200 cursor-pointer relative outline-none group ${isActive
+                  ? 'text-emerald-700 bg-emerald-500/10 dark:text-emerald-450 dark:bg-emerald-500/5 font-semibold'
+                  : 'text-zinc-650 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
+                  }`}
               >
                 {/* Dynamic slider background element for active tab */}
                 {isActive && (
@@ -101,7 +106,7 @@ export function Sidebar({
                   <span className={`shrink-0 transition-transform group-hover:scale-105 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>
                     {item.icon}
                   </span>
-                  
+
                   {isOpen && (
                     <motion.span
                       initial={{ opacity: 0, x: -6 }}
@@ -198,13 +203,15 @@ export function Sidebar({
                       key={item.id}
                       onClick={() => {
                         onSelect(item.id);
-                        onToggle(); // Automatically close mobile drawer upon navigation
-                      }}
-                      className={`w-full flex items-center justify-start rounded-xl p-3 transition-all duration-200 cursor-pointer relative outline-none ${
-                        isActive
-                          ? 'text-emerald-700 bg-emerald-500/10 dark:text-emerald-450 dark:bg-emerald-500/5 font-semibold'
-                          : 'text-zinc-650 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
-                      }`}
+                        if (window.innerWidth < 1024) {
+                          onToggleStore(false);
+                        }
+                      }}// Automatically close mobile drawer upon navigation
+
+                      className={`w-full flex items-center justify-start rounded-xl p-3 transition-all duration-200 cursor-pointer relative outline-none ${isActive
+                        ? 'text-emerald-700 bg-emerald-500/10 dark:text-emerald-450 dark:bg-emerald-500/5 font-semibold'
+                        : 'text-zinc-650 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
+                        }`}
                     >
                       <div className="flex items-center gap-3 w-full">
                         <span className={`shrink-0 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>

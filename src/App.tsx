@@ -4,7 +4,6 @@ import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { ThemeProvider } from './components/ThemeProvider';
 import { useUserStore } from './store/userStore';
-
 // Route-based progressive lazy chunk splitting
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 const OnboardingPage = lazy(() => import('./pages/OnboardingPage').then(m => ({ default: m.OnboardingPage })));
@@ -21,8 +20,8 @@ const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ defa
 function AppContent() {
   const profile = useUserStore((s) => s.profile);
   const currentView = useUserStore((s) => s.currentView);
+  // const setSidebarOpen = useUserStore((s) => s.setSidebarOpen);
   const sidebarOpen = useUserStore((s) => s.sidebarOpen);
-
   const isHomeView = currentView === 'landing' || currentView === 'onboarding';
 
   const renderView = () => {
