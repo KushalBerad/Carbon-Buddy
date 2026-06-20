@@ -4,7 +4,6 @@ import React from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useUserStore } from '../store/userStore';
-
 export interface LandingPageProps {
   onStartOnboarding?: () => void;
   onSkipToDashboard?: () => void;
@@ -86,7 +85,7 @@ export const LandingPage = React.memo(function LandingPage({
           className="relative w-full max-w-4xl aspect-[16/9] rounded-3xl overflow-hidden shadow-2xl border border-zinc-200/50 dark:border-zinc-800"
         >
           <img 
-            src="/src/assets/images/eco_hero_banner_1781788383367.jpg" 
+            src="/hero.jpg"
             alt="Eco-friendly visual landscape representation" 
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
