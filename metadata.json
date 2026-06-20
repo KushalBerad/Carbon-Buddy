@@ -1,0 +1,6 @@
+{
+  "name": "Carbon Buddy",
+  "description": "A production-grade sustainability application to help users reduce their carbon footprint through progressive, reward-based habit changes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
