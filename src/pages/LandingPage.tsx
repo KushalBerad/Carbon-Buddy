@@ -107,6 +107,7 @@ export const LandingPage = React.memo(function LandingPage({
             rightIcon={<ArrowRight className="w-5 h-5" />}
             onClick={onStartOnboarding}
             className="w-full sm:w-auto px-8"
+            aria-label="Start the onboarding process to personalize experience"
           >
             Personalize My Experience
           </Button>
@@ -115,6 +116,7 @@ export const LandingPage = React.memo(function LandingPage({
             size="lg"
             onClick={onSkipToDashboard}
             className="w-full sm:w-auto px-8"
+            aria-label="Go directly to the dashboard"
           >
             Go Directly to Dashboard
           </Button>

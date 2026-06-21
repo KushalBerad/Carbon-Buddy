@@ -101,6 +101,7 @@ export const EcoFinderPage = React.memo(function EcoFinderPage({ onEarnPoints: p
                   ? 'border-teal-500 bg-teal-500/5 text-teal-600'
                   : 'border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900'
               }`}
+              aria-label={`Filter locations by ${cat.label}`}
             >
               {cat.label}
             </button>
@@ -154,6 +155,7 @@ export const EcoFinderPage = React.memo(function EcoFinderPage({ onEarnPoints: p
                           className="py-1 text-[10px]"
                           onClick={() => handleVisit(spot.id, spot.pointsRewarded, spot.offsetCarbonGrams)}
                           rightIcon={<Navigation className="w-3 h-3" />}
+                          aria-label="Check in at this location"
                         >
                           Check In
                         </Button>

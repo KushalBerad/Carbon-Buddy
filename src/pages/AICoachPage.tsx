@@ -83,6 +83,7 @@ export const AICoachPage = React.memo(function AICoachPage({
             onClick={onClearThread}
             leftIcon={<RefreshCw className="w-4 h-4" />}
             className="text-[11px]"
+            aria-label="Clear conversation"
           >
             Clear conversation
           </Button>
@@ -208,6 +209,7 @@ export const AICoachPage = React.memo(function AICoachPage({
                     if (!isResponding) onSendMessage(q);
                   }}
                   className="w-full text-left p-3 border border-zinc-100 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-950/20 hover:border-emerald-550/50 hover:bg-emerald-500/5 hover:text-emerald-500 rounded-xl text-[11px] text-zinc-650 dark:text-zinc-300 font-light leading-relaxed cursor-pointer transition-all duration-200 outline-none flex items-center justify-between group"
+                  aria-label={`Ask about ${q}`}
                 >
                   <span className="truncate flex-1 pr-2">{q}</span>
                   <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />

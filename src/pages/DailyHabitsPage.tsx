@@ -1,8 +1,8 @@
 import {
-    CheckCircle2,
-    Info,
-    Plus,
-    Trash2
+  CheckCircle2,
+  Info,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import React, { useState } from 'react';
@@ -74,6 +74,7 @@ export const DailyHabitsPage = React.memo(function DailyHabitsPage({
           variant="primary"
           leftIcon={<Plus className="w-4.5 h-4.5" />}
           onClick={() => setIsAddModalOpen(true)}
+          aria-label="Create custom habit"
         >
           Create Custom Habit
         </Button>
@@ -178,10 +179,10 @@ export const DailyHabitsPage = React.memo(function DailyHabitsPage({
         description="Configure a recurring custom sustainable act."
         footer={
           <>
-            <Button variant="secondary" size="sm" onClick={() => setIsAddModalOpen(false)}>
+            <Button variant="secondary" size="sm" onClick={() => setIsAddModalOpen(false)} aria-label="Cancel habit creation">
               Cancel
             </Button>
-            <Button variant="primary" size="sm" onClick={handleCreate}>
+            <Button variant="primary" size="sm" onClick={handleCreate} aria-label="Create custom habit">
               Insert To Checklist
             </Button>
           </>
@@ -207,7 +208,7 @@ export const DailyHabitsPage = React.memo(function DailyHabitsPage({
               <label className="font-bold text-zinc-600 dark:text-zinc-405">Grams Carbon Offset</label>
               <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{newOffset}g CO₂</span>
             </div>
-            <input
+            <input  aria-label="Set estimated carbon offset in grams"
               type="range"
               min="50"
               max="2000"
@@ -224,7 +225,7 @@ export const DailyHabitsPage = React.memo(function DailyHabitsPage({
               <label className="font-bold text-zinc-600 dark:text-zinc-405">Estimated USD Saved</label>
               <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">${newMoney.toFixed(2)}</span>
             </div>
-            <input
+            <input  aria-label="Set estimated money saved in USD"
               type="range"
               min="0.00"
               max="15.00"
@@ -248,6 +249,7 @@ export const DailyHabitsPage = React.memo(function DailyHabitsPage({
                       ? 'border-emerald-500 bg-emerald-500/5 text-emerald-600'
                       : 'border-zinc-200 dark:border-zinc-800 text-zinc-500'
                   }`}
+                  aria-label={`Select category ${cat}`}
                 >
                   {cat}
                 </button>

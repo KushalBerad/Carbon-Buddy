@@ -156,6 +156,7 @@ export const OnboardingPage = React.memo(function OnboardingPage({ onComplete }:
                           ? 'border-emerald-500 bg-emerald-500/5 text-emerald-900 dark:text-emerald-300 font-semibold shadow-xs'
                           : 'border-zinc-150/60 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-950 text-zinc-650 dark:text-zinc-300'
                       }`}
+                      aria-label={`Select ${opt.label} as your diet preference`}
                     >
                       <div>
                         <p className="text-xs font-bold leading-normal">{opt.label}</p>
@@ -193,6 +194,7 @@ export const OnboardingPage = React.memo(function OnboardingPage({ onComplete }:
                           ? 'border-emerald-500 bg-emerald-500/5 text-emerald-900 dark:text-emerald-300 font-semibold shadow-xs'
                           : 'border-zinc-150/60 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-950 text-zinc-650 dark:text-zinc-300'
                       }`}
+                      aria-label={`Select ${opt.label} as your commute preference`}
                     >
                       <div>
                         <p className="text-xs font-bold leading-normal">{opt.label}</p>
@@ -234,6 +236,7 @@ export const OnboardingPage = React.memo(function OnboardingPage({ onComplete }:
                           ? 'border-emerald-500 bg-emerald-500/5 text-emerald-900 dark:text-emerald-300 font-semibold shadow-xs'
                           : 'border-zinc-150/60 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-950 text-zinc-655 dark:text-zinc-300'
                       }`}
+                      aria-label={`Select ${opt.label} as your energy conservation preference`}
                     >
                       <div>
                         <p className="text-xs font-bold leading-normal">{opt.label}</p>
@@ -256,6 +259,7 @@ export const OnboardingPage = React.memo(function OnboardingPage({ onComplete }:
               leftIcon={<ArrowLeft className="w-4 h-4" />}
               onClick={handleBack}
               className="flex-1"
+              aria-label="Go back to the previous step"
             >
               Back
             </Button>
@@ -269,6 +273,7 @@ export const OnboardingPage = React.memo(function OnboardingPage({ onComplete }:
             onClick={handleNext}
             className="flex-1"
             disabled={step === 1 && !name.trim()}
+            aria-label={step === 4 ? 'Confirm your onboarding setup' : 'Continue to the next step'}
           >
             {step === 4 ? 'Confirm Setup' : 'Continue'}
           </Button>

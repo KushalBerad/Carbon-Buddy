@@ -88,6 +88,7 @@ export function HabitToggle({
         {/* Dynamic Tap Checkbox */}
         <button
           onClick={() => onChange(!checked)}
+          aria-label={checked ? 'Mark habit as incomplete' : 'Mark habit as complete'}
           className={`relative w-8 h-8 rounded-xl border outline-none transition-all flex items-center justify-center cursor-pointer ${
             checked
               ? 'bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-450 shadow-sm shadow-emerald-500/25'

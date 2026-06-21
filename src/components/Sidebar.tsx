@@ -92,6 +92,7 @@ export function Sidebar({
                   ? 'text-emerald-700 bg-emerald-500/10 dark:text-emerald-450 dark:bg-emerald-500/5 font-semibold'
                   : 'text-zinc-650 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
                   }`}
+                aria-label={item.label}
               >
                 {/* Dynamic slider background element for active tab */}
                 {isActive && (
@@ -149,6 +150,7 @@ export function Sidebar({
           <button
             onClick={onToggle}
             className="p-1.5 rounded-lg border border-zinc-200/50 dark:border-zinc-800/80 hover:bg-zinc-150/50 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-300 transition-colors cursor-pointer outline-none"
+            aria-label={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
           >
             {isOpen ? <ChevronLeft className="w-4.5 h-4.5" /> : <ChevronRight className="w-4.5 h-4.5" />}
           </button>
@@ -212,6 +214,7 @@ export function Sidebar({
                         ? 'text-emerald-700 bg-emerald-500/10 dark:text-emerald-450 dark:bg-emerald-500/5 font-semibold'
                         : 'text-zinc-650 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
                         }`}
+                      aria-label={item.label}
                     >
                       <div className="flex items-center gap-3 w-full">
                         <span className={`shrink-0 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>

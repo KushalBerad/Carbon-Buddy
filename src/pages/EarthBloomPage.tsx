@@ -287,6 +287,7 @@ export const EarthBloomPage = React.memo(function EarthBloomPage({
                 className="w-full flex justify-between items-center py-3 bg-sky-500/10 hover:bg-sky-500/15 text-sky-600 border border-sky-500/20 rounded-xl transition-all"
                 onClick={handleWater}
                 isLoading={watering}
+                aria-label="Water the plant to trigger hydration animation"
               >
                 <div className="flex items-center gap-2 text-xs font-bold">
                   <Droplets className="w-4 h-4 text-sky-500" />
@@ -300,6 +301,7 @@ export const EarthBloomPage = React.memo(function EarthBloomPage({
                 className="w-full flex justify-between items-center py-3 bg-amber-500/10 hover:bg-amber-500/15 text-amber-600 border border-amber-500/20 rounded-xl transition-all"
                 onClick={handleSunlight}
                 isLoading={sunning}
+                aria-label="Expose the plant to sunlight to trigger photosynthesis animation"
               >
                 <div className="flex items-center gap-2 text-xs font-bold">
                   <Sun className="w-4.5 h-4.5 text-amber-500" />
@@ -313,6 +315,7 @@ export const EarthBloomPage = React.memo(function EarthBloomPage({
                 className="w-full flex justify-between items-center py-3 bg-emerald-500/10 hover:bg-emerald-500/15 text-emerald-600 border border-emerald-500/20 rounded-xl transition-all"
                 onClick={handleCompost}
                 isLoading={composting}
+                aria-label="Add organic compost to the plant"
               >
                 <div className="flex items-center gap-2 text-xs font-bold">
                   <Sparkles className="w-4 h-4 text-emerald-500" />

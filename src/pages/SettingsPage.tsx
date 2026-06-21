@@ -95,6 +95,7 @@ export const SettingsPage = React.memo(function SettingsPage({ profile: propProf
                           ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500 shadow-sm'
                           : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900/60'
                       }`}
+                      aria-label={`Select ${option} as your diet preference`}
                     >
                       {option}
                     </button>
@@ -115,6 +116,7 @@ export const SettingsPage = React.memo(function SettingsPage({ profile: propProf
                           ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500 shadow-sm'
                           : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900/60'
                       }`}
+                      aria-label={`Select ${option} as your commute preference`}
                     >
                       {option}
                     </button>
@@ -135,6 +137,7 @@ export const SettingsPage = React.memo(function SettingsPage({ profile: propProf
                           ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500 shadow-sm'
                           : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 text-zinc-650 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900/60'
                       }`}
+                      aria-label={`Select ${option} as your energy conservation preference`}
                     >
                       {option}
                     </button>
@@ -164,6 +167,7 @@ export const SettingsPage = React.memo(function SettingsPage({ profile: propProf
                         ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/80 shadow-xs'
                         : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900/60'
                     }`}
+                    aria-label="Toggle light mode"
                   >
                     <Sun className="w-4 h-4 text-amber-500" /> Light Mode
                   </button>
@@ -174,6 +178,7 @@ export const SettingsPage = React.memo(function SettingsPage({ profile: propProf
                         ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500 shadow-xs'
                         : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900/60'
                     }`}
+                    aria-label="Toggle dark mode"
                   >
                     <Moon className="w-4 h-4 text-indigo-400" /> Dark Mode
                   </button>
@@ -235,6 +240,7 @@ export const SettingsPage = React.memo(function SettingsPage({ profile: propProf
               size="sm"
               className="w-full text-xs font-semibold"
               onClick={onReset}
+              aria-label="Reset your pioneer profile and onboarding data"
             >
               Reset Pioneer Profile
             </Button>

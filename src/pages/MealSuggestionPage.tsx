@@ -105,6 +105,7 @@ export const MealSuggestionPage = React.memo(function MealSuggestionPage({
                       variant="primary"
                       size="sm"
                       onClick={() => onAdoptMeal(meal.id)}
+                      aria-label={`Adopt the meal alternative for ${meal.originalName} to ${meal.alternativeName}`}
                     >
                       Adopt Alternative
                     </Button>
@@ -136,6 +137,7 @@ export const MealSuggestionPage = React.memo(function MealSuggestionPage({
                 onChange={(e) => setBaseInput(e.target.value)}
                 disabled={isGeneratingMeal}
                 className="w-full px-4 py-2.5 border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 rounded-xl text-xs text-zinc-905 dark:text-zinc-100 focus:outline-none focus:ring-1 focus:ring-emerald-500/20"
+                aria-label="Enter ingredient to replace"
               />
 
               <Button

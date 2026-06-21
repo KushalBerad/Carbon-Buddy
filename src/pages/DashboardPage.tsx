@@ -1,12 +1,12 @@
 import {
-    ArrowRight,
-    DollarSign,
-    Flame,
-    Hourglass,
-    Leaf,
-    Sparkles,
-    Trophy,
-    UtensilsCrossed
+  ArrowRight,
+  DollarSign,
+  Flame,
+  Hourglass,
+  Leaf,
+  Sparkles,
+  Trophy,
+  UtensilsCrossed
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import React, { useMemo } from 'react';
@@ -202,6 +202,7 @@ export const DashboardPage = React.memo(function DashboardPage({
             rightIcon={<ArrowRight className="w-4 h-4" />}
             onClick={() => onNavigate('habits')}
             className="mt-6"
+            aria-label="Navigate to habit logging page"
           >
             Log Eco Habits
           </Button>
@@ -230,6 +231,7 @@ export const DashboardPage = React.memo(function DashboardPage({
           size="sm"
           onClick={() => onNavigate('bloom')}
           rightIcon={<ArrowRight className="w-4 h-4" />}
+          aria-label="Check planter progress"
           className="bg-emerald-650 hover:bg-emerald-700 text-white shrink-0 font-bold border border-emerald-500/10 shadow-sm"
         >
           Check Planter Progress
@@ -255,6 +257,7 @@ export const DashboardPage = React.memo(function DashboardPage({
               onClick={() => onNavigate('meals')}
               className="px-0 py-1 font-semibold text-emerald-600 dark:text-emerald-400 text-xs hover:bg-transparent"
               rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+              aria-label="Navigate to meal suggestions"
             >
               Explore Meal Alternatives
             </Button>
@@ -277,6 +280,7 @@ export const DashboardPage = React.memo(function DashboardPage({
               onClick={() => onNavigate('reflection')}
               className="px-0 py-1 font-semibold text-emerald-600 dark:text-emerald-400 text-xs hover:bg-transparent"
               rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+              aria-label="Navigate to reflection page"
             >
               Examine Progress Reports
             </Button>

@@ -68,6 +68,7 @@ export const WeeklyReflectionPage = React.memo(function WeeklyReflectionPage({
           leftIcon={<Sparkles className="w-4.5 h-4.5 text-yellow-300" />}
           onClick={onGenerateReflection}
           isLoading={isGenerating}
+          aria-label="Generate a new weekly reflection report using AI analysis"
         >
           Compute New AI Reflection
         </Button>
@@ -94,6 +95,7 @@ export const WeeklyReflectionPage = React.memo(function WeeklyReflectionPage({
                         ? 'border-emerald-500 bg-emerald-500/5 shadow-xs'
                         : 'border-zinc-150/40 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-90 w-full'
                     }`}
+                    aria-label={`View detailed reflection report for week of ${ref.date}`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
