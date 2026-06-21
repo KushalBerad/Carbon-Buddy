@@ -6,7 +6,7 @@ import {
   Leaf,
   Sparkles,
   Trophy,
-  UtensilsCrossed
+  UtensilsCrossed,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import React, { useMemo } from 'react';
@@ -31,84 +31,154 @@ export interface DashboardPageProps {
   onNavigate?: (tabId: string) => void;
 }
 
-export const DashboardPage = React.memo(function DashboardPage({ 
-  profile: propProfile, 
-  progress: propProgress, 
-  recentOffsets: propRecentOffsets, 
-  onNavigate: propOnNavigate 
-}: DashboardPageProps) {
-  const storeProfile = useUserStore((s) => s.profile);
-  const storeSetCurrentView = useUserStore((s) => s.setCurrentView);
-  const habits = useHabitStore((s) => s.habits);
+type OffsetMap = {
+  transport: number;
+  food: number;
+  energy: number;
+  waste: number;
+  water: number;
+};
 
-  const profile = propProfile || storeProfile;
-  const onNavigate = propOnNavigate || storeSetCurrentView;
+export const DashboardPage = React.memo(function DashboardPage({
+  profile: propProfile,
+  progress: propProgress,
+  recentOffsets: propRecentOffsets,
+  onNavigate: propOnNavigate,
+}: DashboardPageProps) {
+  const storeProfile = useUserStore((state) => state.profile);
+  const setCurrentView = useUserStore((state) => state.setCurrentView);
+  const habits = useHabitStore((state) => state.habits);
+
+  const profile = propProfile ?? storeProfile;
+  const onNavigate = propOnNavigate ?? setCurrentView;
 
   const progress = useMemo(() => {
-    if (propProgress !== undefined) return propProgress;
-    const totalCompleted = habits.filter(h => h.checked).length;
-    return habits.length > 0 ? Math.round((totalCompleted / habits.length) * 100) : 0;
+    if (typeof propProgress === 'number') return propProgress;
+
+    const completedHabits = habits.filter((habit) => habit.checked).length;
+
+    return habits.length > 0
+      ? Math.round((completedHabits / habits.length) * 100)
+      : 0;
   }, [propProgress, habits]);
 
-  const recentOffsets = useMemo(() => {
+  const recentOffsets = useMemo<OffsetMap>(() => {
     if (propRecentOffsets) return propRecentOffsets;
-    const offsets = { transport: 0, food: 0, energy: 0, waste: 0, water: 0 };
-    habits.filter(h => h.checked).forEach(h => {
-      offsets[h.category] += h.offset;
-    });
-    return offsets;
+
+    return habits.reduce<OffsetMap>(
+      (accumulator, habit) => {
+        if (habit.checked) {
+          accumulator[habit.category] += habit.offset;
+        }
+
+        return accumulator;
+      },
+      {
+        transport: 0,
+        food: 0,
+        energy: 0,
+        waste: 0,
+        water: 0,
+      }
+    );
   }, [propRecentOffsets, habits]);
+
+  const totalOffset = useMemo(() => {
+    return Object.values(recentOffsets).reduce(
+      (total, value) => total + value,
+      0
+    );
+  }, [recentOffsets]);
 
   if (!profile) return null;
 
-  // Simple category totals mapping
-  const totalOffset = Object.values(recentOffsets).reduce((a, b) => (a as number) + (b as number), 0) as number;
-
+  const offsetBreakdown = [
+    {
+      label: 'Sustainable Transport',
+      value: recentOffsets.transport,
+      max: 2000,
+      color: 'bg-emerald-500',
+    },
+    {
+      label: 'Low Carbon Food Choices',
+      value: recentOffsets.food,
+      max: 2000,
+      color: 'bg-teal-500',
+    },
+    {
+      label: 'Energy Optimization',
+      value: recentOffsets.energy,
+      max: 2000,
+      color: 'bg-amber-500',
+    },
+    {
+      label: 'Water & Waste Reduction',
+      value: recentOffsets.water + recentOffsets.waste,
+      max: 2000,
+      color: 'bg-sky-500',
+    },
+  ];
 
   return (
-    <div className="space-y-8 font-sans">
-      {/* 1. Welcomer Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-emerald-950 text-white relative overflow-hidden border border-zinc-800 shadow-xl">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-44 h-44 bg-teal-500/5 rounded-full blur-2xl pointer-events-none" />
+    <main
+      role="main"
+      className="space-y-8 font-sans"
+    >
+      {/* Hero Section */}
+      <section className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-linear-to-br from-zinc-900 via-zinc-900 to-emerald-950 p-6 text-white shadow-xl sm:p-8">
+        <div className="pointer-events-none absolute right-0 top-0 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-1/4 h-44 w-44 rounded-full bg-teal-500/5 blur-2xl" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 font-bold text-[10px] uppercase tracking-wider font-mono border border-emerald-500/20">
-              <Sparkles className="w-3.5 h-3.5 fill-emerald-400/10" /> Level {profile.level} Eco Pioneer
+        <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/20 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+              <Sparkles className="h-3.5 w-3.5" />
+              Level {profile.level} Sustainability Leader
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Welcome back, {profile.name}!
+
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+              Welcome back, {profile.name}
             </h1>
-            <p className="text-zinc-500 text-xs sm:text-sm font-light max-w-xl">
-              Your carbon-conscious actions are paying off. You have achieved <strong className="text-emerald-400 font-medium font-mono">{(profile.points / 100).toFixed(0)} milestones</strong> since launching!
+
+            <p className="max-w-xl text-xs font-light text-zinc-400 sm:text-sm">
+              Your sustainability decisions continue reducing carbon emissions.
+              You have earned{' '}
+              <strong className="font-mono font-semibold text-emerald-400">
+                {profile.points} impact points
+              </strong>{' '}
+              while building healthier environmental habits.
             </p>
           </div>
 
-          {/* Quick Streak Widget */}
-          <div className="flex items-center gap-4 bg-zinc-950/40 border border-zinc-850 p-4 rounded-2xl shrink-0">
-            <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 border border-orange-500/10">
-              <Flame className="w-6 h-6 fill-orange-500/10" />
+          <div className="flex shrink-0 items-center gap-4 rounded-2xl border border-zinc-700 bg-zinc-950/40 p-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-orange-500/10 bg-orange-500/10 text-orange-400">
+              <Flame className="h-6 w-6" />
             </div>
-            <div className="space-y-0.5">
-              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider font-mono">COMMUNITY STREAK</span>
-              <p className="text-lg font-extrabold font-mono text-orange-400 leading-none">{profile.streak} DAYS STRONG</p>
+
+            <div>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                Sustainability Streak
+              </span>
+
+              <p className="text-lg font-extrabold leading-none text-orange-400">
+                {profile.streak} DAYS
+              </p>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 2. Key Statistics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Statistics */}
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-3">
         <StatCard
           title="Carbon Saved"
           value={profile.carbonSavedTotal}
           unit="g CO₂"
           changeValue={14.8}
           changeType="positive"
-          changeLabel="vs standard baseline"
+          changeLabel="Environmental reduction"
           glowColor="emerald"
-          icon={<Leaf className="w-5 h-5 text-emerald-500" />}
+          icon={<Leaf className="h-5 w-5 text-emerald-500" />}
         />
 
         <StatCard
@@ -117,63 +187,80 @@ export const DashboardPage = React.memo(function DashboardPage({
           unit="USD"
           changeValue={9.2}
           changeType="positive"
-          changeLabel="Saved toll & commute cost"
+          changeLabel="Daily sustainable savings"
           glowColor="amber"
-          icon={<DollarSign className="w-5 h-5 text-amber-500" />}
+          icon={<DollarSign className="h-5 w-5 text-amber-500" />}
         />
 
-        <Card className="p-5 flex items-center gap-6">
-          <ProgressRing 
-            percentage={progress} 
-            size={85} 
+        <Card className="flex items-center gap-6 p-5">
+          <ProgressRing
+            percentage={progress}
+            size={85}
             strokeWidth={8}
-            subLabel="milestone"
+            subLabel="progress"
           />
-          <div className="space-y-1.5 flex-1">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-505">Daily Score</h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-300 font-light leading-relaxed">
-              Log daily lifestyle habits to reach {Math.ceil(progress / 10) * 10}% carbon reduction for additional point rewards!
+
+          <div className="flex-1 space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-300">
+              Daily Completion Score
+            </h3>
+
+            <p className="text-xs font-light leading-relaxed text-zinc-500 dark:text-zinc-300">
+              Continue completing sustainability habits to maximize your daily
+              environmental impact score.
             </p>
           </div>
         </Card>
-      </div>
+      </section>
 
-      {/* 3. Deep Breakdowns & Recommended Actions Split */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Category Breakdown (2 columns width) */}
-        <Card className="lg:col-span-2 p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-850 pb-4">
+      {/* Carbon Analytics */}
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <Card className="space-y-6 p-6 lg:col-span-2">
+          <div className="flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800">
             <div>
-              <h2 className="text-sm font-bold text-zinc-800 dark:text-zinc-100 font-sans">Carbon Offsets by Lifestyle Sector</h2>
-              <p className="text-[11px] text-zinc-500 dark:text-zinc-300 font-light mt-0.5">Real-time breakdown of grams of carbon offset today.</p>
+              <h2 className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
+                Carbon Impact Analytics
+              </h2>
+
+              <p className="mt-1 text-[11px] font-light text-zinc-500 dark:text-zinc-300">
+                Real-time sustainability contribution breakdown.
+              </p>
             </div>
-            <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-xl">
-              +{totalOffset}g Total Today
+
+            <span className="rounded-xl bg-emerald-500/10 px-3 py-1 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+              +{totalOffset}g Today
             </span>
           </div>
 
-          {/* Graphical Bars representation */}
           <div className="space-y-5">
-            {[
-              { label: 'Green Commuting (Transport)', value: recentOffsets.transport, max: 2000, color: 'bg-emerald-500' },
-              { label: 'Plant-Based Eating (Food)', value: recentOffsets.food, max: 2000, color: 'bg-teal-500' },
-              { label: 'Energy Management (Power)', value: recentOffsets.energy, max: 2000, color: 'bg-amber-500' },
-              { label: 'Conservation Choices (Water & Waste)', value: recentOffsets.water + recentOffsets.waste, max: 2000, color: 'bg-sky-500' },
-            ].map((item, index) => {
-              const pct = Math.min(100, Math.max(5, (item.value / item.max) * 100));
+            {offsetBreakdown.map((item) => {
+              const percentage = Math.min(
+                100,
+                Math.max(5, (item.value / item.max) * 100)
+              );
+
               return (
-                <div key={index} className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium text-zinc-650 dark:text-zinc-300">
+                <div
+                  key={item.label}
+                  className="space-y-2"
+                >
+                  <div className="flex justify-between text-xs font-medium text-zinc-600 dark:text-zinc-300">
                     <span>{item.label}</span>
-                    <span className="font-mono text-zinc-800 dark:text-zinc-250 font-bold">{item.value}g CO₂</span>
+
+                    <span className="font-mono font-bold">
+                      {item.value}g CO₂
+                    </span>
                   </div>
-                  <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.8, delay: index * 0.1 }}
-                      className={`h-full ${item.color} rounded-full`}
+                      animate={{ width: `${percentage}%` }}
+                      transition={{
+                        duration: 0.6,
+                        ease: 'easeOut',
+                      }}
+                      className={`h-full rounded-full ${item.color}`}
                     />
                   </div>
                 </div>
@@ -181,17 +268,20 @@ export const DashboardPage = React.memo(function DashboardPage({
             })}
           </div>
         </Card>
-
-        {/* Quick Launch Cards */}
-        <Card className="p-6 flex flex-col justify-between border-l-4 border-l-emerald-500/80">
+        <Card className="flex flex-col justify-between border-l-4 border-l-emerald-500/80 p-6">
           <div className="space-y-4">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-              <Trophy className="w-5 h-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+              <Trophy className="h-5 w-5" />
             </div>
-            <div className="space-y-1.5">
-              <h3 className="text-sm font-bold text-zinc-805 dark:text-zinc-150 font-sans">Extend Commuter Streak</h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-300 font-light leading-relaxed">
-                Unlock rare achievements like "Eco Commuter" by cycling or walking instead of ride-sharing!
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-100">
+                Build Sustainability Streak
+              </h3>
+
+              <p className="text-xs font-light leading-relaxed text-zinc-500 dark:text-zinc-300">
+                Continue sustainable commuting, food selection, and energy
+                reduction habits to unlock advanced environmental milestones.
               </p>
             </div>
           </div>
@@ -199,96 +289,117 @@ export const DashboardPage = React.memo(function DashboardPage({
           <Button
             variant="accent"
             size="sm"
-            rightIcon={<ArrowRight className="w-4 h-4" />}
             onClick={() => onNavigate('habits')}
+            rightIcon={<ArrowRight className="h-4 w-4" />}
+            aria-label="Open daily habits tracker"
+            title="Open daily habits tracker"
             className="mt-6"
-            aria-label="Navigate to habit logging page"
           >
-            Log Eco Habits
+            Track Daily Habits
           </Button>
-		</Card>
+        </Card>
+      </section>
 
-      </div>
+      {/* Earth Bloom */}
+      <section>
+        <Card className="flex flex-col items-center justify-between gap-6 rounded-3xl border border-emerald-500/10 bg-linear-to-r from-emerald-500/5 to-teal-500/5 p-6 md:flex-row">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600">
+              <Leaf className="h-6 w-6" />
+            </div>
 
-      {/* Earth Bloom Micro Terrarium */}
-      <Card className="p-6 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 border border-emerald-500/10 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 flex items-center justify-center text-emerald-600 shrink-0 select-none">
-            <Leaf className="w-6 h-6 animate-bounce" />
+            <div className="space-y-1">
+              <h3 className="flex items-center gap-2 text-sm font-bold text-zinc-800 dark:text-zinc-100">
+                Earth Bloom Ecosystem
+
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-600">
+                  ACTIVE
+                </span>
+              </h3>
+
+              <p className="max-w-2xl text-xs font-light leading-relaxed text-zinc-600 dark:text-zinc-300">
+                Your sustainability actions directly contribute toward the
+                virtual Earth Bloom ecosystem. Maintain responsible habits and
+                continue building long-term environmental impact.
+              </p>
+            </div>
           </div>
-          <div className="space-y-1">
-            <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-100 font-sans flex items-center gap-1.5">
-              <span>Earth Bloom Micro Terrarium</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold animate-pulse">ACTIVE FEED</span>
-            </h3>
-            <p className="text-xs text-zinc-550 dark:text-zinc-300 font-light leading-relaxed max-w-2xl">
-              Your points balance of <strong className="font-mono text-emerald-600 dark:text-emerald-400 font-black">{profile.points} XP</strong> is feeding a blooming virtual flora! Nurture it with water, upgrade your companion species, and watch it grow carbon-eating flowers.
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => onNavigate('bloom')}
+            rightIcon={<ArrowRight className="h-4 w-4" />}
+            aria-label="Open Earth Bloom system"
+            title="Open Earth Bloom system"
+            className="shrink-0"
+          >
+            View Earth Bloom
+          </Button>
+        </Card>
+      </section>
+
+      {/* Action Cards */}
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <Card className="flex items-start gap-4 p-5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-500/10 text-teal-600">
+            <UtensilsCrossed className="h-5 w-5" />
+          </div>
+
+          <div className="flex-1 space-y-2">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
+              Eco Food Alternatives
+            </h4>
+
+            <p className="text-xs font-light leading-relaxed text-zinc-500 dark:text-zinc-300">
+              Discover sustainable meal alternatives designed to lower carbon
+              emissions while preserving nutritional value and reducing resource
+              consumption.
             </p>
-          </div>
-        </div>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => onNavigate('bloom')}
-          rightIcon={<ArrowRight className="w-4 h-4" />}
-          aria-label="Check planter progress"
-          className="bg-emerald-650 hover:bg-emerald-700 text-white shrink-0 font-bold border border-emerald-500/10 shadow-sm"
-        >
-          Check Planter Progress
-        </Button>
-      </Card>
 
-      {/* 4. Instant Action Slider / Quick Tips Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* Meal suggest cross link */}
-        <Card className="p-5 flex items-start gap-4">
-          <div className="w-10 h-10 bg-teal-500/10 rounded-xl flex items-center justify-center shrink-0 text-teal-600">
-            <UtensilsCrossed className="w-5 h-5" />
-          </div>
-          <div className="space-y-2 flex-1">
-            <h4 className="text-xs font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-505">Suggested Eco Meals</h4>
-            <p className="text-xs text-zinc-500 dark:text-zinc-500 font-light leading-relaxed">
-              Explore dynamic green recipes holding lower carbon footprints. Replace a high-intensity beef burger with a custom alternative today to earn +40 points immediately.
-            </p>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onNavigate('meals')}
-              className="px-0 py-1 font-semibold text-emerald-600 dark:text-emerald-400 text-xs hover:bg-transparent"
-              rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
-              aria-label="Navigate to meal suggestions"
+              rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
+              aria-label="Open meal alternatives"
+              title="Open meal alternatives"
+              className="px-0 py-1 text-xs font-semibold text-emerald-600 hover:bg-transparent dark:text-emerald-400"
             >
-              Explore Meal Alternatives
+              Explore Meal Plans
             </Button>
           </div>
         </Card>
 
-        {/* Reflection cross link */}
-        <Card className="p-5 flex items-start gap-4">
-          <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center shrink-0 text-indigo-500">
-            <Hourglass className="w-5 h-5" />
+        <Card className="flex items-start gap-4 p-5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500">
+            <Hourglass className="h-5 w-5" />
           </div>
-          <div className="space-y-2 flex-1">
-            <h4 className="text-xs font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-505">Weekly Lifestyle Reflection</h4>
-            <p className="text-xs text-zinc-500 dark:text-zinc-500 font-light leading-relaxed">
-              Review parameters in structured weekly retrospectives. Generate AI logs analyzing your metrics against regional grids.
+
+          <div className="flex-1 space-y-2">
+            <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
+              Weekly Sustainability Reflection
+            </h4>
+
+            <p className="text-xs font-light leading-relaxed text-zinc-500 dark:text-zinc-300">
+              Generate AI-powered weekly sustainability reports and analyze your
+              carbon-saving performance against long-term environmental goals.
             </p>
+
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onNavigate('reflection')}
-              className="px-0 py-1 font-semibold text-emerald-600 dark:text-emerald-400 text-xs hover:bg-transparent"
-              rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
-              aria-label="Navigate to reflection page"
+              rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
+              aria-label="Open sustainability report"
+              title="Open sustainability report"
+              className="px-0 py-1 text-xs font-semibold text-emerald-600 hover:bg-transparent dark:text-emerald-400"
             >
-              Examine Progress Reports
+              View Weekly Reports
             </Button>
           </div>
         </Card>
-
-      </div>
-    </div>
+      </section>
+    </main>
   );
 });
-

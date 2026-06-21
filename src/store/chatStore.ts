@@ -1,149 +1,417 @@
+/**
+ * Carbon Buddy AI Sustainability Coach Store
+ *
+ * Responsible for:
+ * - AI sustainability conversations
+ * - Carbon reduction coaching
+ * - Eco lifestyle recommendations
+ * - Environmental awareness guidance
+ */
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ChatMessage } from '../types';
 
+/**
+ * Configuration constants.
+ */
+const CHAT_HISTORY_LIMIT = 6;
+const INVALID_INPUT_DELAY = 600;
+const FALLBACK_RESPONSE_DELAY = 900;
+
+/**
+ * Store contract.
+ */
 interface ChatState {
   messages: ChatMessage[];
   isResponding: boolean;
+
   sendMessage: (text: string) => Promise<void>;
   clearThread: () => void;
   resetChat: () => void;
 }
 
-export const useChatStore = create<ChatState>()(
-  persist(
-    (set, get) => ({
-      messages: [],
-      isResponding: false,
-      sendMessage: async (text) => {
-        const userMsg: ChatMessage = {
-          id: `m-user-${Date.now()}`,
-          role: 'user',
-          content: text,
-          timestamp: new Date(),
-        };
+/**
+ * Generates chat message object.
+ */
+const createMessage = (
+  role: 'user' | 'model',
+  content: string
+): ChatMessage => ({
+  id: crypto.randomUUID(),
+  role,
+  content,
+  timestamp: new Date(),
+});
 
-        const currentMessages = get().messages;
-        const nextMessages = [...currentMessages, userMsg];
-        set({ messages: nextMessages, isResponding: true });
+/**
+ * Detects keyboard smashing / invalid prompts.
+ */
+const isInvalidPrompt = (
+  input: string
+): boolean => {
+  const cleanedInput =
+    input.trim().toLowerCase();
 
-        // Heuristic function to detect gibberish or keyboard mashing
-        const isGibberish = (str: string): boolean => {
-          const cleaned = str.trim().toLowerCase();
-          if (!cleaned) return true;
-          if (!/[a-z]/i.test(cleaned)) return true;
+  if (!cleanedInput) {
+    return true;
+  }
 
-          const words = cleaned.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
-          if (words.length === 0) return true;
+  if (!/[a-z]/i.test(cleanedInput)) {
+    return true;
+  }
 
-          for (const word of words) {
-            if (word.length >= 6 && !/^[0-9]+$/.test(word)) {
-              const vowels = word.match(/[aeiouy]/g);
-              const vowelCount = vowels ? vowels.length : 0;
-              // Detect raw consonant sequences or extremely low vowel-to-consonant density (less than 20% vowels)
-              if (vowelCount === 0 || vowelCount / word.length < 0.20 || /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(word)) {
-                const safeWords = ['transport', 'transit', 'through', 'lifestyle', 'strength'];
-                if (!safeWords.includes(word)) {
-                  return true;
-                }
-              }
-            }
-          }
+  const words = cleanedInput
+    .replace(/[^a-z0-9\s]/g, '')
+    .split(/\s+/)
+    .filter(Boolean);
 
-          const mashProfiles = ['asdf', 'qwerty', 'zxcv', 'jkl;', 'xyz', 'qwe', 'asd', 'zxc'];
-          if (words.some(w => mashProfiles.some(p => w.includes(p)))) {
-            return true;
-          }
+  if (words.length === 0) {
+    return true;
+  }
 
-          return false;
-        };
+  const safeWords = [
+    'transport',
+    'transit',
+    'through',
+    'lifestyle',
+    'strength',
+  ];
 
-        if (isGibberish(text)) {
-          setTimeout(() => {
-            const modelMsg: ChatMessage = {
-              id: `m-model-${Date.now()}`,
-              role: 'model',
-              content: `I could not fully understand your question.
+  for (const word of words) {
+    if (
+      word.length >= 6 &&
+      !/^[0-9]+$/.test(word)
+    ) {
+      const vowels =
+        word.match(/[aeiouy]/g);
 
-Try asking things like:
+      const vowelCount =
+        vowels?.length ?? 0;
 
-• How can I reduce my carbon footprint?
-• What food choices lower emissions?
-• Eco-friendly commuting alternatives?
-• How can I save energy at home?`,
-              timestamp: new Date(),
-            };
-            set((state) => ({ messages: [...state.messages, modelMsg], isResponding: false }));
-          }, 600);
-          return;
-        }
+      const suspiciousPattern =
+        vowelCount === 0 ||
+        vowelCount / word.length <
+        0.2 ||
+        /[bcdfghjklmnpqrstvwxyz]{5,}/i.test(
+          word
+        );
 
-        try {
-          const response = await fetch('/api/gemini/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text, history: nextMessages.slice(-6).map(m => ({ role: m.role, content: m.content })) }),
-          });
-
-          const data = await response.json();
-          if (data.error) {
-            throw new Error(data.error);
-          }
-
-          const modelMsg: ChatMessage = {
-            id: `m-model-${Date.now()}`,
-            role: 'model',
-            content: data.text || 'Understood, let us trace standard footprints together.',
-            timestamp: new Date(),
-          };
-          set((state) => ({ messages: [...state.messages, modelMsg] }));
-        } catch (err: any) {
-          console.warn('Gemini chat fell back to premium simulation:', err);
-          let reply = "That is an excellent point. Opting for transit choices, turning down heat pumps at night, and swapping beef with oat alternatives keeps carbon indexes minimum.";
-          if (text.toLowerCase().includes('phantom') || text.toLowerCase().includes('energy')) {
-            reply = "Phantom energy vampire loads continuous standby power from gadgets like televisions, smart charges, and coffee creators. Standard power strips can be powered down to save $4/cycle easily.";
-          } else if (text.toLowerCase().includes('commute') || text.toLowerCase().includes('subway')) {
-            reply = "Subcars and trains hold approx 90% less CO₂ margins compared to solos. It saves continuous dollars on tolls and parking meters in crowded metro grids.";
-          } else if (text.toLowerCase().includes('recipe') || text.toLowerCase().includes('soy') || text.toLowerCase().includes('protein')) {
-            reply = "Spiced lentils, brown rice beans, and tofu soy mixes provide high iron indexes. It maintains low water and land coefficients, reducing meals output significantly.";
-          }
-
-          setTimeout(() => {
-            const modelMsg: ChatMessage = {
-              id: `m-model-${Date.now()}`,
-              role: 'model',
-              content: reply,
-              timestamp: new Date(),
-            };
-            set((state) => ({ messages: [...state.messages, modelMsg] }));
-          }, 900);
-        } finally {
-          set({ isResponding: false });
-        }
-      },
-      clearThread: () => set({ messages: [] }),
-      resetChat: () => set({ messages: [], isResponding: false }),
-    }),
-    {
-      name: 'carbon-buddy-chat-store',
-      storage: {
-        getItem: (name) => {
-          const str = localStorage.getItem(name);
-          if (!str) return null;
-          const parsed = JSON.parse(str);
-          if (parsed.state?.messages) {
-            parsed.state.messages = parsed.state.messages.map((m: any) => ({
-              ...m,
-              timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
-            }));
-          }
-          return parsed;
-        },
-        setItem: (name, value) => {
-          localStorage.setItem(name, JSON.stringify(value));
-        },
-        removeItem: (name) => localStorage.removeItem(name),
+      if (
+        suspiciousPattern &&
+        !safeWords.includes(word)
+      ) {
+        return true;
       }
     }
-  )
-);
+  }
+
+  const keyboardMashPatterns = [
+    'asdf',
+    'qwerty',
+    'zxcv',
+    'qwe',
+    'asd',
+    'zxc',
+  ];
+
+  return words.some((word) =>
+    keyboardMashPatterns.some(
+      (pattern) =>
+        word.includes(pattern)
+    )
+  );
+};
+
+/**
+ * Generates educational fallback response.
+ */
+const generateFallbackResponse = (
+  input: string
+): string => {
+  const normalizedInput =
+    input.toLowerCase();
+
+  if (
+    normalizedInput.includes(
+      'energy'
+    ) ||
+    normalizedInput.includes(
+      'phantom'
+    )
+  ) {
+    return 'Reducing phantom energy consumption from idle electronics can significantly lower household electricity usage and reduce unnecessary carbon emissions.';
+  }
+
+  if (
+    normalizedInput.includes(
+      'commute'
+    ) ||
+    normalizedInput.includes(
+      'subway'
+    )
+  ) {
+    return 'Public transport systems generate dramatically lower CO₂ emissions compared to individual vehicle travel while reducing transportation costs.';
+  }
+
+  if (
+    normalizedInput.includes(
+      'recipe'
+    ) ||
+    normalizedInput.includes(
+      'soy'
+    ) ||
+    normalizedInput.includes(
+      'protein'
+    )
+  ) {
+    return 'Plant-based protein sources such as lentils, soy, and legumes reduce agricultural emissions while maintaining strong nutritional value.';
+  }
+
+  return 'Small sustainable lifestyle improvements such as efficient transport, reducing meat consumption, and lowering energy waste can dramatically reduce long-term carbon footprint.';
+};
+
+/**
+ * Persists Date objects correctly.
+ */
+const customStorage = {
+  getItem: (name: string) => {
+    const storedValue =
+      localStorage.getItem(name);
+
+    if (!storedValue) {
+      return null;
+    }
+
+    const parsed =
+      JSON.parse(storedValue);
+
+    if (parsed.state?.messages) {
+      parsed.state.messages =
+        parsed.state.messages.map(
+          (
+            message: ChatMessage
+          ) => ({
+            ...message,
+            timestamp:
+              message.timestamp
+                ? new Date(
+                  message.timestamp
+                )
+                : new Date(),
+          })
+        );
+    }
+
+    return parsed;
+  },
+
+  setItem: (
+    name: string,
+    value: unknown
+  ) => {
+    localStorage.setItem(
+      name,
+      JSON.stringify(value)
+    );
+  },
+
+  removeItem: (
+    name: string
+  ) => {
+    localStorage.removeItem(name);
+  },
+};
+
+/**
+ * Carbon Buddy AI coach store.
+ */
+export const useChatStore =
+  create<ChatState>()(
+    persist(
+      (set, get) => ({
+        messages: [],
+        isResponding: false,
+
+        /**
+         * Sends user query to AI sustainability coach.
+         */
+        sendMessage: async (
+          text
+        ) => {
+          const userMessage =
+            createMessage(
+              'user',
+              text
+            );
+
+          const conversationHistory =
+            [
+              ...get().messages,
+              userMessage,
+            ];
+
+          set({
+            messages:
+              conversationHistory,
+            isResponding: true,
+          });
+
+          /**
+           * Handle invalid input.
+           */
+          if (
+            isInvalidPrompt(
+              text
+            )
+          ) {
+            setTimeout(() => {
+              const invalidReply =
+                createMessage(
+                  'model',
+                  `I could not understand your question.
+
+Try asking:
+
+• How can I reduce my carbon footprint?
+• Sustainable food alternatives?
+• Energy saving at home?
+• Eco-friendly transport options?`
+                );
+
+              set(
+                (
+                  state
+                ) => ({
+                  messages: [
+                    ...state.messages,
+                    invalidReply,
+                  ],
+                  isResponding:
+                    false,
+                })
+              );
+            }, INVALID_INPUT_DELAY);
+
+            return;
+          }
+
+          try {
+            const apiResponse =
+              await fetch(
+                '/api/gemini/chat',
+                {
+                  method:
+                    'POST',
+                  headers: {
+                    'Content-Type':
+                      'application/json',
+                  },
+                  body: JSON.stringify(
+                    {
+                      message:
+                        text,
+                      history:
+                        conversationHistory
+                          .slice(
+                            -CHAT_HISTORY_LIMIT
+                          )
+                          .map(
+                            (
+                              message
+                            ) => ({
+                              role: message.role,
+                              content:
+                                message.content,
+                            })
+                          ),
+                    }
+                  ),
+                }
+              );
+
+            const payload =
+              await apiResponse.json();
+
+            if (!apiResponse.ok) {
+              throw new Error(
+                payload.error ||
+                'Gemini API request failed'
+              );
+            }
+
+            const modelReply =
+              createMessage(
+                'model',
+                payload.text ??
+                'Sustainability coaching response generated successfully.'
+              );
+
+            set(
+              (
+                state
+              ) => ({
+                messages: [
+                  ...state.messages,
+                  modelReply,
+                ],
+              })
+            );
+          } catch (
+          chatError
+          ) {
+            console.warn(
+              'AI chat unavailable. Using local sustainability simulation.',
+              chatError
+            );
+
+            const fallbackReply =
+              generateFallbackResponse(
+                text
+              );
+
+            const modelReply =
+              createMessage(
+                'model',
+                fallbackReply
+              );
+
+            set((state) => ({
+              messages: [
+                ...state.messages,
+                modelReply,
+              ],
+            }));
+          } finally {
+            set({
+              isResponding: false,
+            });
+          }
+        },
+
+        /**
+         * Clears conversation thread.
+         */
+        clearThread: () =>
+          set({
+            messages: [],
+          }),
+
+        /**
+         * Full chat reset.
+         */
+        resetChat: () =>
+          set({
+            messages: [],
+            isResponding: false,
+          }),
+      }),
+
+      {
+        name:
+          'carbon-buddy-chat-store',
+        storage:
+          customStorage,
+      }
+    )
+  );

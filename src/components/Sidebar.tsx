@@ -12,10 +12,10 @@ import {
   MessageSquareCode,
   Settings,
   UtensilsCrossed,
-  X
+  X,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useUserStore } from '../store/userStore';
 
 interface SidebarItem {
@@ -41,208 +41,261 @@ export function Sidebar({
   onSelect: propOnSelect,
   streakDays: propStreakDays,
 }: SidebarProps) {
-  const profile = useUserStore((s) => s.profile);
-  const isOpenStore = useUserStore((s) => s.sidebarOpen);
-  const onToggleStore = useUserStore((s) => s.setSidebarOpen);
-  const activeIdStore = useUserStore((s) => s.currentView);
-  const onSelectStore = useUserStore((s) => s.setCurrentView);
+  const profile = useUserStore((state) => state.profile);
+  const sidebarOpen = useUserStore((state) => state.sidebarOpen);
+  const setSidebarOpen = useUserStore((state) => state.setSidebarOpen);
+  const currentView = useUserStore((state) => state.currentView);
+  const setCurrentView = useUserStore((state) => state.setCurrentView);
 
-  const isOpen = propIsOpen !== undefined ? propIsOpen : isOpenStore;
-  const onToggle = propOnToggle || (() => onToggleStore(!isOpenStore));
+  const isOpen = propIsOpen ?? sidebarOpen;
+  const activeId = propActiveId ?? currentView;
+  const streakDays = propStreakDays ?? profile?.streak ?? 1;
 
-  const activeId = propActiveId !== undefined ? propActiveId : activeIdStore;
+  const onToggle =
+    propOnToggle ?? (() => setSidebarOpen(!sidebarOpen));
+
+  const onSelect =
+    propOnSelect ??
+    ((view: string) => {
+      setCurrentView(view);
+    });
+
   useEffect(() => {
     if (window.innerWidth < 1024) {
-      onToggleStore(false);
+      setSidebarOpen(false);
     }
-  }, [activeId]);
+  }, [activeId, setSidebarOpen]);
 
-  const onSelect = propOnSelect || onSelectStore;
-  const streakDays = propStreakDays !== undefined ? propStreakDays : (profile?.streak ?? 1);
-  // Navigation tabs matching Core features requested
-  const menuItems: SidebarItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { id: 'habits', label: 'Daily Habits', icon: <CheckSquare className="w-5 h-5" /> },
-    { id: 'reflection', label: 'Weekly Reflection', icon: <Calendar className="w-5 h-5" /> },
-    { id: 'coach', label: 'AI Coach Chat', icon: <MessageSquareCode className="w-5 h-5" /> },
-    { id: 'meals', label: 'AI Eco Meals', icon: <UtensilsCrossed className="w-5 h-5" /> },
-    { id: 'location', label: 'Eco Finder', icon: <MapPinCheckInside className="w-5 h-5" /> },
-    { id: 'bloom', label: 'Earth Bloom', icon: <Flower className="w-5 h-5" /> },
-    { id: 'achievements', label: 'Achievements', icon: <Award className="w-5 h-5" /> },
-    { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
-  ];
+  const menuItems = useMemo<SidebarItem[]>(
+    () => [
+      {
+        id: 'dashboard',
+        label: 'Dashboard',
+        icon: <LayoutDashboard className="w-5 h-5" />,
+      },
+      {
+        id: 'habits',
+        label: 'Daily Habits',
+        icon: <CheckSquare className="w-5 h-5" />,
+      },
+      {
+        id: 'reflection',
+        label: 'Weekly Reflection',
+        icon: <Calendar className="w-5 h-5" />,
+      },
+      {
+        id: 'coach',
+        label: 'AI Coach Chat',
+        icon: <MessageSquareCode className="w-5 h-5" />,
+      },
+      {
+        id: 'meals',
+        label: 'AI Eco Meals',
+        icon: <UtensilsCrossed className="w-5 h-5" />,
+      },
+      {
+        id: 'location',
+        label: 'Eco Finder',
+        icon: <MapPinCheckInside className="w-5 h-5" />,
+      },
+      {
+        id: 'bloom',
+        label: 'Earth Bloom',
+        icon: <Flower className="w-5 h-5" />,
+      },
+      {
+        id: 'achievements',
+        label: 'Achievements',
+        icon: <Award className="w-5 h-5" />,
+      },
+      {
+        id: 'settings',
+        label: 'Settings',
+        icon: <Settings className="w-5 h-5" />,
+      },
+    ],
+    [],
+  );
+
+  const streakProgress = Math.min(100, (streakDays / 7) * 100);
+
+  const renderMenuButton = (item: SidebarItem, mobile = false) => {
+    const isActive = activeId === item.id;
+
+    return (
+      <button
+        key={item.id}
+        type="button"
+        onClick={() => {
+          onSelect(item.id);
+
+          if (mobile && window.innerWidth < 1024) {
+            setSidebarOpen(false);
+          }
+        }}
+        aria-label={item.label}
+        className={`relative flex w-full items-center justify-start rounded-xl p-3 transition-all duration-200 ${
+          isActive
+            ? 'bg-emerald-500/10 font-semibold text-emerald-700 dark:text-emerald-400'
+            : 'text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800'
+        }`}
+      >
+        {isActive && !mobile && (
+          <motion.div
+            layoutId="sidebar-active"
+            className="absolute left-0 h-6 w-1 rounded-r bg-emerald-500"
+            transition={{
+              type: 'spring',
+              stiffness: 380,
+              damping: 30,
+            }}
+          />
+        )}
+
+        <div className="flex w-full items-center gap-3">
+          <span>{item.icon}</span>
+
+          {(isOpen || mobile) && (
+            <span className="truncate text-sm">{item.label}</span>
+          )}
+        </div>
+      </button>
+    );
+  };
 
   return (
     <>
-      {/* Desktop Sidebar */}
+      {/* Desktop */}
       <aside
         id={id}
-        className={`fixed top-16 bottom-0 left-0 z-35 bg-white dark:bg-zinc-900 border-r border-zinc-150/50 dark:border-zinc-800/50 flex flex-col transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'
-          } hidden lg:flex`}
+        className={`fixed bottom-0 left-0 top-16 z-30 hidden flex-col border-r border-zinc-200 bg-white transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-900 lg:flex ${
+          isOpen ? 'w-64' : 'w-20'
+        }`}
       >
-        {/* Scrollable Navigation section */}
-        <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto">
-          {menuItems.map((item) => {
-            const isActive = activeId === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onSelect(item.id)}
-                className={`w-full flex items-center justify-start rounded-xl p-3 transition-all duration-200 cursor-pointer relative outline-none group ${isActive
-                  ? 'text-emerald-700 bg-emerald-500/10 dark:text-emerald-450 dark:bg-emerald-500/5 font-semibold'
-                  : 'text-zinc-650 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
-                  }`}
-                aria-label={item.label}
-              >
-                {/* Dynamic slider background element for active tab */}
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTabBadge"
-                    className="absolute left-0 w-1.2 h-6 rounded-r-md bg-emerald-500"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  />
-                )}
-
-                <div className="flex items-center gap-3 w-full">
-                  <span className={`shrink-0 transition-transform group-hover:scale-105 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>
-                    {item.icon}
-                  </span>
-
-                  {isOpen && (
-                    <motion.span
-                      initial={{ opacity: 0, x: -6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -6 }}
-                      className="text-sm truncate"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+        <nav
+          aria-label="Main navigation"
+          className="flex-1 space-y-2 overflow-y-auto px-3 py-6"
+        >
+          {menuItems.map((item) => renderMenuButton(item))}
         </nav>
 
-        {/* Gamified Habit Streak Indicator Widget at Bottom */}
         {isOpen && (
-          <div className="p-4 mx-3 mb-4 rounded-2xl bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-150/40 dark:border-zinc-800 flex flex-col gap-2.5">
+          <div className="mx-3 mb-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-orange-500/15">
+              <div className="rounded-lg bg-orange-500/10 p-2">
                 <FlameKindling className="w-4 h-4 text-orange-500" />
               </div>
+
               <div>
-                <p className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Eco Green Streak</p>
-                <p className="text-[10px] text-zinc-500 dark:text-zinc-300">{streakDays} Days Strong</p>
+                <p className="text-xs font-semibold">Eco Streak</p>
+                <p className="text-[10px] text-zinc-500">
+                  {streakDays} Days Active
+                </p>
               </div>
             </div>
-            <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-gradient-to-r from-orange-400 to-amber-500 h-full rounded-full" style={{ width: `${(streakDays / 7) * 100}%` }} />
+
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-orange-400 to-amber-500"
+                style={{ width: `${streakProgress}%` }}
+              />
             </div>
-            <span className="text-[9px] text-zinc-500 dark:text-zinc-300 italic text-center font-light">
-              Keep logging to extend your streak!
-            </span>
+
+            <p className="mt-2 text-center text-[10px] text-zinc-500">
+              Maintain habits to continue progress
+            </p>
           </div>
         )}
 
-        {/* Collapse/Expand toggle handle */}
-        <div className="p-4 border-t border-zinc-150/40 dark:border-zinc-800/80 flex items-center justify-end">
+        <div className="flex justify-end border-t border-zinc-200 p-4 dark:border-zinc-800">
           <button
+            type="button"
             onClick={onToggle}
-            className="p-1.5 rounded-lg border border-zinc-200/50 dark:border-zinc-800/80 hover:bg-zinc-150/50 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-300 transition-colors cursor-pointer outline-none"
             aria-label={isOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+            className="rounded-lg border border-zinc-200 p-2 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
           >
-            {isOpen ? <ChevronLeft className="w-4.5 h-4.5" /> : <ChevronRight className="w-4.5 h-4.5" />}
+            {isOpen ? (
+              <ChevronLeft className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
           </button>
         </div>
       </aside>
 
-      {/* Mobile Drawer Sidebar */}
+      {/* Mobile */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop overlay for mobile screen */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.4 }}
               exit={{ opacity: 0 }}
               onClick={onToggle}
-              className="fixed inset-0 z-45 bg-zinc-950/60 lg:hidden cursor-pointer"
+              className="fixed inset-0 z-40 bg-black/40 lg:hidden"
             />
-            {/* Slide-out Drawer container */}
+
             <motion.aside
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-zinc-900 shadow-2xl flex flex-col lg:hidden border-r border-zinc-150/50 dark:border-zinc-800/50"
+              transition={{
+                type: 'spring',
+                damping: 25,
+                stiffness: 220,
+              }}
+              className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 lg:hidden"
             >
-              {/* Header inside Mobile Drawer */}
-              <div className="h-16 border-b border-zinc-150/50 dark:border-zinc-800/50 px-4 flex items-center justify-between">
+              <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-4 dark:border-zinc-800">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center">
-                    <Leaf className="w-4.5 h-4.5 text-white" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400">
+                    <Leaf className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-sm font-bold bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+
+                  <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-sm font-bold text-transparent">
                     Carbon Buddy
                   </span>
                 </div>
+
                 <button
+                  type="button"
                   onClick={onToggle}
-                  className="p-1.5 rounded-lg border border-zinc-200 dark:border-zinc-850 text-zinc-500 dark:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
-                  aria-label="Close mobile navigation modal"
+                  aria-label="Close sidebar"
+                  className="rounded-lg border border-zinc-200 p-2 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Scrollable Navigation links */}
-              <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                {menuItems.map((item) => {
-                  const isActive = activeId === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        onSelect(item.id);
-                        if (window.innerWidth < 1024) {
-                          onToggleStore(false);
-                        }
-                      }}// Automatically close mobile drawer upon navigation
-
-                      className={`w-full flex items-center justify-start rounded-xl p-3 transition-all duration-200 cursor-pointer relative outline-none ${isActive
-                        ? 'text-emerald-700 bg-emerald-500/10 dark:text-emerald-450 dark:bg-emerald-500/5 font-semibold'
-                        : 'text-zinc-650 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200'
-                        }`}
-                      aria-label={item.label}
-                    >
-                      <div className="flex items-center gap-3 w-full">
-                        <span className={`shrink-0 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>
-                          {item.icon}
-                        </span>
-                        <span className="text-sm truncate">
-                          {item.label}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+              <nav
+                aria-label="Mobile navigation"
+                className="flex-1 space-y-1 overflow-y-auto px-3 py-4"
+              >
+                {menuItems.map((item) =>
+                  renderMenuButton(item, true),
+                )}
               </nav>
 
-              {/* Habit Streak Widget at Bottom of Mobile Drawer */}
-              <div className="p-4 border-t border-zinc-150/40 dark:border-zinc-800/80">
-                <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-150/40 dark:border-zinc-800/80 text-xs">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-1 rounded-md bg-orange-500/15">
-                      <FlameKindling className="w-3.5 h-3.5 text-orange-500" />
-                    </div>
+              <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
+                <div className="rounded-xl bg-zinc-50 p-3 dark:bg-zinc-950">
+                  <div className="flex items-center gap-2">
+                    <FlameKindling className="w-4 h-4 text-orange-500" />
+
                     <div>
-                      <p className="font-semibold text-zinc-700 dark:text-zinc-300 text-[11px]">Eco Green Streak</p>
-                      <p className="text-[10px] text-zinc-500 dark:text-zinc-300">{streakDays} Days</p>
+                      <p className="text-xs font-semibold">
+                        Eco Streak
+                      </p>
+                      <p className="text-[10px] text-zinc-500">
+                        {streakDays} Days
+                      </p>
                     </div>
                   </div>
-                  <div className="w-full bg-zinc-200 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-orange-400 to-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, (streakDays / 7) * 100)}%` }} />
+
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-orange-400 to-amber-500"
+                      style={{ width: `${streakProgress}%` }}
+                    />
                   </div>
                 </div>
               </div>

@@ -5,7 +5,8 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 
 // Load environmental parameters
-dotenv.config();
+dotenv.config({ path: '.env.local' });
+console.log("Gemini key loaded:", process.env.GEMINI_API_KEY ? "YES" : "NO");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -105,7 +106,7 @@ Do not add any other pleasantries, apologies, or feedback. Respond exactly with 
 
     // Map history to the required format for chat
     const chat = ai.chats.create({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-2.5-flash',
       config: {
         systemInstruction: systemPrompt,
         temperature: 0.7,
@@ -118,8 +119,9 @@ Do not add any other pleasantries, apologies, or feedback. Respond exactly with 
       // Re-query or seed the conversation if needed, or simply send the message in context.
       // For simple stateless chat proxy, you can pass previous contents as text references
       const promptContext = `Recent conversation references:\n${history.map((h: any) => `${h.role === 'model' ? 'AI' : 'User'}: ${h.content}`).join('\n')}\n\nLatest User query: ${message}`;
+      console.log("Sending request to Gemini...");
       response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: 'gemini-2.5-flash',
         contents: promptContext,
         config: {
           systemInstruction: systemPrompt,
@@ -127,13 +129,13 @@ Do not add any other pleasantries, apologies, or feedback. Respond exactly with 
       });
     } else {
       response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: 'gemini-2.5-flash',
         contents: message,
         config: {
           systemInstruction: systemPrompt,
         }
       });
-    }
+    }console.log("Gemini responded successfully");
 
     res.json({ text: response.text });
   } catch (error: any) {
@@ -168,7 +170,7 @@ Prepare the response in serialized clean JSON conforming exactly to the followin
 - Estimated metric Carbon Saved this cycle: ${totalSavedCarbon || 0}g CO₂`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-2.5-flash',
       contents: userStatsContext,
       config: {
         systemInstruction: systemPrompt,
@@ -218,7 +220,7 @@ Format your answer in clean JSON strictly with these fields:
     const query = `Propose an alternative for: "${ingredient}"`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-2.5-flash',
       contents: query,
       config: {
         systemInstruction: systemPrompt,

@@ -1,11 +1,21 @@
-import { Calendar, ChevronRight, Hourglass, ShieldCheck, Sparkles, Star } from 'lucide-react';
+import {
+  Calendar,
+  ChevronRight,
+  Hourglass,
+  ShieldCheck,
+  Sparkles,
+  Star,
+} from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useReflectionStore } from '../store/reflectionStore';
 import { useUserStore } from '../store/userStore';
-import { UserProfile, WeeklyReflection } from '../types';
+import {
+  UserProfile,
+  WeeklyReflection,
+} from '../types';
 
 export interface WeeklyReflectionPageProps {
   profile?: UserProfile;
@@ -14,185 +24,375 @@ export interface WeeklyReflectionPageProps {
   isGenerating?: boolean;
 }
 
-export const WeeklyReflectionPage = React.memo(function WeeklyReflectionPage({ 
-  profile: propProfile, 
-  reflections: propReflections, 
-  onGenerateReflection: propOnGenerateReflection, 
-  isGenerating: propIsGenerating 
-}: WeeklyReflectionPageProps) {
-  const storeProfile = useUserStore((s) => s.profile);
-  const storeReflections = useReflectionStore((s) => s.reflections);
-  const storeGenerateReflection = useReflectionStore((s) => s.generateReflection);
-  const storeIsGenerating = useReflectionStore((s) => s.isGeneratingReflection);
+export const WeeklyReflectionPage =
+  React.memo(function WeeklyReflectionPage({
+    profile: propProfile,
+    reflections: propReflections,
+    onGenerateReflection:
+    propOnGenerateReflection,
+    isGenerating: propIsGenerating,
+  }: WeeklyReflectionPageProps) {
+    const storeProfile =
+      useUserStore(
+        (s) => s.profile
+      );
 
-  const profile = propProfile || storeProfile;
-  const reflections = propReflections || storeReflections;
-  const onGenerateReflection = propOnGenerateReflection || storeGenerateReflection;
-  const isGenerating = propIsGenerating !== undefined ? propIsGenerating : storeIsGenerating;
+    const storeReflections =
+      useReflectionStore(
+        (s) => s.reflections
+      );
 
-  const [selectedReflection, setSelectedReflection] = useState<WeeklyReflection | null>(
-    reflections.length > 0 ? reflections[0] : null
-  );
+    const storeGenerateReflection =
+      useReflectionStore(
+        (s) =>
+          s.generateReflection
+      );
 
-  // Auto-select the latest reflection when reflections are added, updated, or reset
-  React.useEffect(() => {
-    if (reflections.length > 0) {
-      setSelectedReflection((prev) => {
-        if (!prev) return reflections[0];
-        const exists = reflections.some((r) => r.weekId === prev.weekId);
-        // If the previously selected item does not exist (e.g. after reset) or if a new one was added at index 0 and list changed
-        if (!exists) return reflections[0];
-        return prev;
-      });
-    } else {
-      setSelectedReflection(null);
-    }
-  }, [reflections]);
+    const storeIsGenerating =
+      useReflectionStore(
+        (s) =>
+          s.isGeneratingReflection
+      );
 
-  return (
-    <div className="space-y-8 font-sans">
-      
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200/50 dark:border-zinc-800 pb-5">
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Weekly Lifestyle Reflections
-          </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-300 font-light mt-1">
-            Let Google Gemini analyze your logged offsets to suggest structural lifestyle upgrades.
-          </p>
+    const profile =
+      propProfile ||
+      storeProfile;
+
+    const reflections =
+      propReflections ||
+      storeReflections;
+
+    const onGenerateReflection =
+      propOnGenerateReflection ||
+      storeGenerateReflection;
+
+    const isGenerating =
+      propIsGenerating !==
+        undefined
+        ? propIsGenerating
+        : storeIsGenerating;
+
+    const [
+      selectedReflection,
+      setSelectedReflection,
+    ] =
+      useState<WeeklyReflection | null>(
+        reflections.length > 0
+          ? reflections[0]
+          : null
+      );
+
+    useEffect(() => {
+      if (
+        reflections.length > 0
+      ) {
+        setSelectedReflection(
+          reflections[0]
+        );
+      } else {
+        setSelectedReflection(
+          null
+        );
+      }
+    }, [reflections]);
+
+    return (
+      <div className="space-y-8 font-sans">
+
+        {/* Header */}
+
+        <div className="flex flex-col gap-4 border-b border-zinc-200/50 pb-5 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
+
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
+              Weekly Lifestyle
+              Reflections
+            </h1>
+
+            <p className="mt-1 text-xs font-light text-zinc-500 dark:text-zinc-300">
+              AI-generated
+              sustainability
+              analysis based on
+              your weekly habits.
+            </p>
+          </div>
+
+          <Button
+            variant="accent"
+            leftIcon={
+              <Sparkles className="h-4 w-4 text-yellow-300" />
+            }
+            onClick={
+              onGenerateReflection
+            }
+            isLoading={
+              isGenerating
+            }
+            aria-label="Generate new weekly reflection"
+          >
+            Generate Reflection
+          </Button>
         </div>
 
-        <Button
-          variant="accent"
-          leftIcon={<Sparkles className="w-4.5 h-4.5 text-yellow-300" />}
-          onClick={onGenerateReflection}
-          isLoading={isGenerating}
-          aria-label="Generate a new weekly reflection report using AI analysis"
-        >
-          Compute New AI Reflection
-        </Button>
-      </div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Previous Reflections Navigation Rail */}
-        <div className="space-y-4">
-          <h2 className="text-xs font-extrabold uppercase tracking-widest text-zinc-455 dark:text-zinc-300">Reflections History</h2>
+          {/* History Panel */}
 
-          <div className="space-y-3">
-            {reflections.length === 0 ? (
-              <p className="text-xs text-zinc-500 dark:text-zinc-300 italic font-light pt-6 text-center">No reports saved yet. Click button above!</p>
-            ) : (
-              reflections.map((ref) => {
-                const isSelected = selectedReflection?.weekId === ref.weekId;
-                return (
-                  <button
-                    key={ref.weekId}
-                    onClick={() => setSelectedReflection(ref)}
-                    className={`w-full flex items-center justify-between text-left p-4 rounded-2xl border transition-all duration-200 select-none outline-none cursor-pointer ${
-                      isSelected
-                        ? 'border-emerald-500 bg-emerald-500/5 shadow-xs'
-                        : 'border-zinc-150/40 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-90 w-full'
-                    }`}
-                    aria-label={`View detailed reflection report for week of ${ref.date}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                        isSelected ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500'
-                      }`}>
-                        <Calendar className="w-4.5 h-4.5" />
+          <div className="space-y-4">
+
+            <h2 className="text-xs font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-300">
+              Reflection History
+            </h2>
+
+            <div className="space-y-3">
+
+              {reflections.length ===
+                0 ? (
+                <p className="pt-6 text-center text-xs italic font-light text-zinc-500 dark:text-zinc-300">
+                  No reflections
+                  available yet.
+                </p>
+              ) : (
+                reflections.map(
+                  (
+                    reflection
+                  ) => {
+                    const isSelected =
+                      selectedReflection?.weekId ===
+                      reflection.weekId;
+
+                    return (
+                      <button
+                        key={reflection.weekId}
+                        type="button"
+                        onClick={() =>
+                          setSelectedReflection(reflection)
+                        }
+                        aria-current={isSelected ? 'true' : 'false'}
+                        className={`w-full rounded-2xl border p-4 text-left transition-all ${isSelected
+                            ? 'border-emerald-500 bg-emerald-500/5'
+                            : 'border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between">
+
+                          <div className="flex items-center gap-3">
+
+                            <div
+                              className={`flex h-9 w-9 items-center justify-center rounded-xl ${isSelected
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800'
+                                }`}
+                            >
+                              <Calendar className="h-4 w-4" />
+                            </div>
+
+                            <div>
+
+                              <p className="text-xs font-bold text-zinc-800 dark:text-zinc-100">
+                                Report{' '}
+                                {
+                                  reflection.date
+                                }
+                              </p>
+
+                              <p className="mt-0.5 text-[10px] font-light text-zinc-500 dark:text-zinc-300">
+                                Weekly analysis
+                              </p>
+
+                            </div>
+                          </div>
+
+                          <ChevronRight className="h-4 w-4 text-zinc-500" />
+                        </div>
+                      </button>
+                    );
+                  }
+                )
+              )}
+            </div>
+          </div>
+          {/* Selected Reflection */}
+
+          <div className="lg:col-span-2">
+
+            <AnimatePresence mode="wait">
+
+              {selectedReflection ? (
+                <motion.div
+                  key={
+                    selectedReflection.weekId
+                  }
+                  initial={{
+                    opacity: 0,
+                    y: 10,
+                  }}
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                  }}
+                  exit={{
+                    opacity: 0,
+                    y: -10,
+                  }}
+                  transition={{
+                    duration: 0.25,
+                  }}
+                  className="space-y-6"
+                >
+                  <Card className="space-y-6 p-6 sm:p-8">
+
+                    {/* Card Header */}
+
+                    <div className="flex items-center justify-between border-b border-zinc-100 pb-4 dark:border-zinc-800">
+
+                      <div className="space-y-1">
+
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">
+                          AI GENERATED REPORT
+                        </span>
+
+                        <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-100">
+                          Analysis for{' '}
+                          {
+                            selectedReflection.date
+                          }
+                        </h3>
+
                       </div>
-                      <div>
-                        <p className={`text-xs font-bold leading-normal ${isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-700 dark:text-zinc-300'}`}>
-                          Report {ref.date}
-                        </p>
-                        <p className="text-[10px] text-zinc-500 dark:text-zinc-300 font-light mt-0.5">Lifestyle sector review</p>
+
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-500">
+                        <Star className="h-5 w-5" />
                       </div>
+
                     </div>
-                    <ChevronRight className={`w-4 h-4 text-zinc-500 transition-transform ${isSelected ? 'translate-x-0.5 text-emerald-550' : ''}`} />
-                  </button>
-                );
-              })
-            )}
+
+                    {/* Scores */}
+
+                    <div className="grid grid-cols-1 gap-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950 md:grid-cols-3">
+
+                      {[
+                        {
+                          label:
+                            'Diet',
+                          val:
+                            selectedReflection.dietScore,
+                          color:
+                            'bg-rose-500/10 text-rose-500',
+                        },
+                        {
+                          label:
+                            'Commute',
+                          val:
+                            selectedReflection.commuteScore,
+                          color:
+                            'bg-emerald-500/10 text-emerald-500',
+                        },
+                        {
+                          label:
+                            'Energy',
+                          val:
+                            selectedReflection.energyScore,
+                          color:
+                            'bg-amber-500/10 text-amber-500',
+                        },
+                      ].map(
+                        (
+                          item
+                        ) => (
+                          <div
+                            key={
+                              item.label
+                            }
+                            className="space-y-2 text-center"
+                          >
+                            <span className="text-[10px] font-bold uppercase text-zinc-500">
+                              {
+                                item.label
+                              }
+                            </span>
+
+                            <div
+                              className={`rounded-xl px-3 py-2 text-xs font-bold ${item.color}`}
+                            >
+                              {
+                                item.val
+                              }
+                              /100
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+
+                    {/* AI Feedback */}
+
+                    <div className="space-y-3">
+
+                      <div className="flex items-center gap-2">
+
+                        <Sparkles className="h-4 w-4 text-emerald-500" />
+
+                        <h4 className="text-xs font-extrabold uppercase tracking-widest text-zinc-800 dark:text-zinc-200">
+                          Coaching Directive
+                        </h4>
+
+                      </div>
+
+                      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 text-xs leading-relaxed text-zinc-700 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
+
+                        <p className="whitespace-pre-line">
+                          {
+                            selectedReflection.aiFeedback
+                          }
+                        </p>
+
+                      </div>
+
+                    </div>
+
+                    {/* Footer */}
+
+                    <div className="flex items-center gap-2 text-[10px] italic text-zinc-500 dark:text-zinc-300">
+
+                      <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-500" />
+
+                      <span>
+                        Verified
+                        sustainability
+                        report
+                        generated
+                        securely
+                      </span>
+
+                    </div>
+
+                  </Card>
+                </motion.div>
+              ) : (
+                <div className="flex h-64 flex-col items-center justify-center rounded-3xl border border-dashed border-zinc-300 p-6 text-center dark:border-zinc-700">
+
+                  <Hourglass
+                    className="h-8 w-8 animate-spin text-zinc-500"
+                    strokeWidth={
+                      1.5
+                    }
+                  />
+
+                  <p className="mt-3 text-xs font-light text-zinc-500 dark:text-zinc-300">
+                    Generate a
+                    reflection
+                    report to
+                    begin
+                    analysis.
+                  </p>
+
+                </div>
+              )}
+
+            </AnimatePresence>
           </div>
         </div>
-
-        {/* Selected Reflection Feedback Sheet */}
-        <div className="lg:col-span-2">
-          <AnimatePresence mode="wait">
-            {selectedReflection ? (
-              <motion.div
-                key={selectedReflection.weekId}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="space-y-6"
-              >
-                <Card className="p-6 sm:p-8 space-y-6">
-                  
-                  {/* Card Title */}
-                  <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-4">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold tracking-widest text-emerald-555 uppercase font-mono">GOOGLE GEMINI 3.5 ANALYSIS</span>
-                      <h3 className="text-lg font-bold text-zinc-855 dark:text-zinc-100 font-sans">Analysis for {selectedReflection.date}</h3>
-                    </div>
-
-                    <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500 shrink-0">
-                      <Star className="w-5 h-5 fill-indigo-500/15" />
-                    </div>
-                  </div>
-
-                  {/* Segment: Dynamic Rating Bars */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-zinc-50 dark:bg-zinc-950 p-4 rounded-2xl border border-zinc-150/40 dark:border-zinc-800/80">
-                    {[
-                      { label: 'Diet Sector', val: selectedReflection.dietScore, color: 'text-rose-500 bg-rose-500/10' },
-                      { label: 'Commute Act', val: selectedReflection.commuteScore, color: 'text-emerald-500 bg-emerald-500/10' },
-                      { label: 'Energy Load', val: selectedReflection.energyScore, color: 'text-amber-500 bg-amber-500/10' },
-                    ].map((sco, idx) => (
-                      <div key={idx} className="flex flex-col items-center justify-center text-center p-3 space-y-1">
-                        <span className="text-[10px] text-zinc-500 font-bold uppercase">{sco.label}</span>
-                        <div className={`px-2.5 py-1 rounded-xl text-xs font-mono font-bold ${sco.color}`}>
-                          Score: {sco.val}/100
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* AI Output Box */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200">
-                      <Sparkles className="w-4 h-4 text-emerald-500" />
-                      <h4 className="text-xs font-extrabold uppercase tracking-widest">Coaching Directive</h4>
-                    </div>
-
-                    <div className="text-zinc-650 dark:text-zinc-350 text-xs leading-relaxed font-light space-y-3 bg-zinc-50/50 dark:bg-zinc-950/20 p-5 rounded-2xl border border-zinc-100 dark:border-zinc-850">
-                      <p className="whitespace-pre-line">{selectedReflection.aiFeedback}</p>
-                    </div>
-                  </div>
-
-                  {/* Compliance stamp */}
-                  <div className="flex items-center gap-2 text-[10px] text-zinc-500 dark:text-zinc-300 font-mono italic">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-                    <span>Verified carbon reduction report computed server-side</span>
-                  </div>
-
-                </Card>
-              </motion.div>
-            ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-center p-6 border border-zinc-150/40 dark:border-zinc-805 border-dashed rounded-3xl">
-                <Hourglass className="w-8 h-8 text-zinc-500 animate-spin" strokeWidth={1.5} />
-                <p className="text-xs text-zinc-500 dark:text-zinc-300 mt-3 font-light">
-                  Select a historic card or trigger "Compute New AI Reflection" to output a complete analysis.
-                </p>
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
-
       </div>
-
-    </div>
-  );
-});
-
+    );
+  });

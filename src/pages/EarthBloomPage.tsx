@@ -1,6 +1,13 @@
-import { Droplets, Flower, Leaf, ShieldCheck, Sparkles, Sprout, Sun } from 'lucide-react';
+import {
+  Droplets,
+  Flower,
+  ShieldCheck,
+  Sparkles,
+  Sprout,
+  Sun
+} from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useBloomStore } from '../store/bloomStore';
@@ -25,195 +32,330 @@ interface PlantSpec {
   glowColor: string;
 }
 
+const SPECIES_LIST: PlantSpec[] = [
+  {
+    id: 'p1',
+    name: 'Climbing Ivy',
+    requiredXP: 0,
+    description:
+      'Cleanses nearby digital air and grows under modest conditions.',
+    color: 'text-emerald-500',
+    glowColor: 'rgba(16,185,129,0.20)',
+  },
+  {
+    id: 'p2',
+    name: 'Bonsai Birch',
+    requiredXP: 150,
+    description:
+      'Sturdy carbon sequestration species. Grows heavy wooden knots.',
+    color: 'text-teal-600',
+    glowColor: 'rgba(13,148,136,0.20)',
+  },
+  {
+    id: 'p3',
+    name: 'Wild Orchid',
+    requiredXP: 300,
+    description:
+      'Exotic flora responsive to zero-waste schedules.',
+    color: 'text-fuchsia-500',
+    glowColor: 'rgba(217,70,239,0.20)',
+  },
+  {
+    id: 'p4',
+    name: 'Golden Bamboo',
+    requiredXP: 500,
+    description:
+      'Rapidly grows shoots with maximum solar efficiency.',
+    color: 'text-amber-500',
+    glowColor: 'rgba(245,158,11,0.20)',
+  },
+];
+
 export const EarthBloomPage = React.memo(function EarthBloomPage({
   profile: propProfile,
   onEarnPoints: propOnEarnPoints,
   adoptedMealsCount: propAdoptedMealsCount,
   completedHabitsCount: propCompletedHabitsCount,
 }: EarthBloomPageProps) {
-  const storeProfile = useUserStore((s) => s.profile);
-  const storeEarnPoints = useUserStore((s) => s.earnPoints);
-  const storeMeals = useMealStore((s) => s.meals);
-  const storeHabits = useHabitStore((s) => s.habits);
-  const storeBloomMessage = useBloomStore((s) => s.bloomMessage);
-  const storeSetBloomMessage = useBloomStore((s) => s.setBloomMessage);
+  const timers = React.useRef<number[]>([]);
+  const storeProfile = useUserStore((state) => state.profile);
+  const storeEarnPoints = useUserStore((state) => state.earnPoints);
 
-  const profile = propProfile || storeProfile;
-  const onEarnPoints = propOnEarnPoints || storeEarnPoints;
-  const adoptedMealsCount = propAdoptedMealsCount !== undefined ? propAdoptedMealsCount : storeMeals.filter(m => m.adopted).length;
-  const completedHabitsCount = propCompletedHabitsCount !== undefined ? propCompletedHabitsCount : storeHabits.filter(h => h.checked).length;
+  const storeMeals = useMealStore((state) => state.meals);
+  const storeHabits = useHabitStore((state) => state.habits);
+
+  const bloomMessage = useBloomStore((state) => state.bloomMessage);
+  const setBloomMessage = useBloomStore(
+    (state) => state.setBloomMessage
+  );
+
+  const profile = propProfile ?? storeProfile;
+  const onEarnPoints = propOnEarnPoints ?? storeEarnPoints;
+
+  const adoptedMealsCount =
+    propAdoptedMealsCount ??
+    storeMeals.filter((meal) => meal.adopted).length;
+
+  const completedHabitsCount =
+    propCompletedHabitsCount ??
+    storeHabits.filter((habit) => habit.checked).length;
 
   const [watering, setWatering] = useState(false);
   const [sunning, setSunning] = useState(false);
   const [composting, setComposting] = useState(false);
-  const [growthState, setGrowthState] = useState<number>(0); // 0 to 100 level representation of current plant stage
-  const [activeSpeciesIndex, setActiveSpeciesIndex] = useState(0);
-  const [bloomMessage, setBloomMessage] = [storeBloomMessage, storeSetBloomMessage];
 
-  if (!profile) return null;
+  const [activeSpeciesIndex, setActiveSpeciesIndex] =
+    useState(0);
 
-  const speciesList: PlantSpec[] = [
-    { id: 'p1', name: 'Climbing Ivy', requiredXP: 0, description: 'Cleanses nearby digital air and grows under modest conditions.', color: 'text-emerald-500', glowColor: 'rgba(16, 185, 129, 0.2)' },
-    { id: 'p2', name: 'Bonsai Birch', requiredXP: 150, description: 'Sturdy carbon sequestration species. Grows heavy wooden knots.', color: 'text-teal-600', glowColor: 'rgba(13, 148, 136, 0.2)' },
-    { id: 'p3', name: 'Wild Orchid', requiredXP: 300, description: 'Exotic flora responsive to zero-waste schedules.', color: 'text-fuchsia-500', glowColor: 'rgba(217, 70, 239, 0.2)' },
-    { id: 'p4', name: 'Golden Bamboo', requiredXP: 500, description: 'Rapidly grows shoots with maximum solar efficiency.', color: 'text-amber-500', glowColor: 'rgba(245, 158, 11, 0.2)' },
-  ];
+  if (!profile) {
+    return null;
+  }
 
-  // Calculate current plant progress relative to the active species requirement
   const score = profile.points;
+
   const currentLevelXP = profile.points % 250;
-  const growthPercentage = Math.min(100, Math.round((currentLevelXP / 250) * 100));
 
-  // Determine stage description based on points
-  const getStageName = () => {
-    if (score < 50) return { stage: 'Seed', description: 'Your journey starts here. Fully dependent on your low-carbon commuting habits.' };
-    if (score < 100) return { stage: 'Sprout', description: 'Beginning to unfurl. Powered by your green choice baselines.' };
-    if (score < 150) return { stage: 'Young Plant', description: 'Expanding leaf spans. Continual green choices strengthen the core stem.' };
-    if (score < 200) return { stage: 'Healthy Plant', description: 'Robust, vibrant growth. Shows consistent daily sustainability check-ins.' };
-    if (score < 250) return { stage: 'Small Tree', description: 'A sturdy woody stem emerges. Great energy conservation habits!' };
-    if (score < 305) return { stage: 'Blooming Tree', description: 'Beautiful petals are emerging, celebrating your adopted plant meal alternatives.' };
-    if (score < 350) return { stage: 'Growing Tree', description: 'Branch density is increasing, capturing carbon from your commute offsets.' };
-    if (score < 400) return { stage: 'Mini Ecosystem', description: 'Attracting regional bio-diversity as your green streak milestones pile up.' };
-    if (score < 480) return { stage: 'Garden', description: 'A beautiful community landmark of active zero-waste lifestyle choices.' };
-    return { stage: 'Thriving Forest', description: 'An ultimate sanctuary of life. You are a carbon-neutral pioneer force!' };
-  };
+  const growthPercentage = useMemo(() => {
+    return Math.min(
+      100,
+      Math.round((currentLevelXP / 250) * 100)
+    );
+  }, [currentLevelXP]);
 
-  const currentStage = getStageName();
+  const currentStage = useMemo(() => {
+    if (score < 50) {
+      return {
+        stage: 'Seed',
+        description:
+          'Your journey starts here. Growth begins with sustainable actions.',
+      };
+    }
 
-  const handleWater = () => {
-    if (watering) return;
-    setWatering(true);
-    setBloomMessage('You watered your plant! Sparking leaf hydration...');
-    setTimeout(() => {
-      setWatering(false);
-      setBloomMessage('Thirst quenched! Your plant absorbed the water beautifully (Visual only - growth is driven solely by your real achievements).');
-    }, 1500);
-  };
+    if (score < 100) {
+      return {
+        stage: 'Sprout',
+        description:
+          'Beginning to unfurl. Your eco habits are building momentum.',
+      };
+    }
 
-  const handleSunlight = () => {
-    if (sunning) return;
-    setSunning(true);
-    setBloomMessage('Bathing the leaves in high-intensity solar waves...');
-    setTimeout(() => {
-      setSunning(false);
-      setBloomMessage('Photosynthesis complete! Energy levels maximized (Visual only - points must be earned through real actions).');
-    }, 1500);
-  };
+    if (score < 150) {
+      return {
+        stage: 'Young Plant',
+        description:
+          'Healthy development supported by your green choices.',
+      };
+    }
 
-  const handleCompost = () => {
-    if (composting) return;
-    setComposting(true);
-    setBloomMessage('Injecting zero-waste organic compost into the root systems...');
-    setTimeout(() => {
-      setComposting(false);
-      setBloomMessage('Soil nutrition optimized beautifully (Visual only - plant maturity scales with your active Carbon Buddy achievements).');
-    }, 1500);
-  };
+    if (score < 200) {
+      return {
+        stage: 'Healthy Plant',
+        description:
+          'Consistent sustainable behavior is strengthening growth.',
+      };
+    }
 
-  const activeSpecies = speciesList[activeSpeciesIndex];
+    if (score < 250) {
+      return {
+        stage: 'Small Tree',
+        description:
+          'Your plant is maturing through consistent impact.',
+      };
+    }
 
-  // Auto unlock plant species based on current points
+    if (score < 350) {
+      return {
+        stage: 'Blooming Tree',
+        description:
+          'Major growth milestone unlocked through sustainable living.',
+      };
+    }
+
+    if (score < 450) {
+      return {
+        stage: 'Mini Ecosystem',
+        description:
+          'Your sustainability habits are creating ecosystem impact.',
+      };
+    }
+
+    return {
+      stage: 'Thriving Forest',
+      description:
+        'Maximum growth achieved. You are a carbon-positive pioneer.',
+    };
+  }, [score]);
+
+  const activeSpecies = SPECIES_LIST[activeSpeciesIndex];
+
   useEffect(() => {
-    let unlockedIdx = 0;
-    for (let i = speciesList.length - 1; i >= 0; i--) {
-      if (profile.points >= speciesList[i].requiredXP) {
-        unlockedIdx = i;
+    let unlockedIndex = 0;
+
+    for (let i = SPECIES_LIST.length - 1; i >= 0; i -= 1) {
+      if (profile.points >= SPECIES_LIST[i].requiredXP) {
+        unlockedIndex = i;
         break;
       }
     }
-    setActiveSpeciesIndex(unlockedIdx);
+
+    setActiveSpeciesIndex(unlockedIndex);
   }, [profile.points]);
 
+  const handleWater = useCallback(() => {
+    if (watering) return;
+
+    setWatering(true);
+    setBloomMessage(
+      'You watered the plant. Hydration sequence activated.'
+    );
+
+    window.setTimeout(() => {
+      setWatering(false);
+      setBloomMessage(
+        'Water absorbed successfully. Visual interaction complete.'
+      );
+    }, 1500);
+  }, [watering, setBloomMessage]);
+
+  const handleSunlight = useCallback(() => {
+    if (sunning) return;
+
+    setSunning(true);
+    setBloomMessage(
+      'Solar energy exposure initiated.'
+    );
+
+    window.setTimeout(() => {
+      setSunning(false);
+      setBloomMessage(
+        'Photosynthesis cycle completed successfully.'
+      );
+    }, 1500);
+  }, [sunning, setBloomMessage]);
+
+  const handleCompost = useCallback(() => {
+    if (composting) return;
+
+    setComposting(true);
+    setBloomMessage(
+      'Organic nutrients delivered to root system.'
+    );
+
+    window.setTimeout(() => {
+      setComposting(false);
+      setBloomMessage(
+        'Soil nutrition cycle completed successfully.'
+      );
+    }, 1500);
+  }, [composting, setBloomMessage]);
+
   return (
-    <div className="space-y-8 font-sans" id="earth-bloom-section">
-      
-      {/* Header section */}
-      <div className="border-b border-zinc-200/50 dark:border-zinc-800 pb-5">
-        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-          <Flower className="w-6.5 h-6.5 text-emerald-500 animate-pulse" />
+    <div
+      id="earth-bloom-section"
+      className="space-y-8 font-sans"
+    >
+      <div className="border-b border-zinc-200/50 pb-5 dark:border-zinc-800">
+        <h1 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <Flower className="h-6 w-6 animate-pulse text-emerald-500" />
           Earth Bloom Planter
         </h1>
-        <p className="text-xs text-zinc-500 dark:text-zinc-300 font-light mt-1">
-          Nurture your virtual terrarium. Your positive carbon offsets, meal choices, and green streaks directly feed this living botanical ecosystem.
+
+        <p className="mt-1 text-xs font-light text-zinc-500 dark:text-zinc-300">
+          Nurture your virtual ecosystem. Real sustainable actions power plant growth.
         </p>
       </div>
 
-      {/* Grid containing Interactive graphic and controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Plant Display Panel */}
-        <div className="lg:col-span-7 flex flex-col gap-6">
-          <Card 
-            className="p-6 relative overflow-hidden flex flex-col items-center justify-center min-h-[460px] bg-gradient-to-b from-emerald-50/10 to-zinc-100/50 dark:from-zinc-900/30 dark:to-zinc-950/80 border border-zinc-200/60 dark:border-zinc-850"
-            style={{ boxShadow: `0 20px 40px ${activeSpecies.glowColor}` }}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="flex flex-col gap-6 lg:col-span-7">
+          <Card
+            className="relative flex min-h-[460px] flex-col items-center justify-center overflow-hidden border border-zinc-200/60 bg-gradient-to-b from-emerald-50/10 to-zinc-100/50 p-6 dark:border-zinc-800 dark:from-zinc-900/30 dark:to-zinc-950/80"
+            style={{
+              boxShadow: `0 20px 40px ${activeSpecies.glowColor}`,
+            }}
           >
-            {/* Dynamic floating sparkles */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
               <AnimatePresence>
                 {watering && (
-                  <motion.div 
+                  <motion.div
+                    key="water-animation"
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 0.8, y: 150 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 1.2, ease: 'easeIn' }}
-                    className="absolute top-10 left-1/2 -translate-x-1/2 flex flex-col gap-4 text-sky-400"
+                    transition={{
+                      duration: 1.2,
+                      ease: 'easeIn',
+                    }}
+                    className="absolute left-1/2 top-10 flex -translate-x-1/2 flex-col gap-4 text-sky-400"
                   >
-                    <Droplets className="w-5 h-5 animate-bounce" />
-                    <Droplets className="w-4 h-4 translate-x-4" />
-                    <Droplets className="w-4.5 h-4.5 -translate-x-6" />
+                    <Droplets className="h-5 w-5 animate-bounce" />
+                    <Droplets className="h-4 w-4 translate-x-4" />
+                    <Droplets className="h-4 w-4 -translate-x-4" />
                   </motion.div>
                 )}
+
                 {sunning && (
-                  <motion.div 
+                  <motion.div
+                  key="sun-animation"
                     initial={{ opacity: 0, scale: 0.6 }}
-                    animate={{ opacity: [0, 0.4, 0.4, 0], scale: [0.6, 1.2, 1.2, 0.6] }}
+                    animate={{
+                      opacity: [0, 0.4, 0.4, 0],
+                      scale: [0.6, 1.2, 1.2, 0.6],
+                    }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 1.5 }}
-                    className="absolute inset-0 flex items-center justify-center bg-yellow-400/5 pointer-events-none"
+                    className="absolute inset-0 flex items-center justify-center bg-yellow-400/5"
                   >
-                    <Sun className="w-48 h-48 text-yellow-400/20 animate-spin" style={{ animationDuration: '8s' }} />
+                    <Sun
+                      className="h-48 w-48 animate-spin text-yellow-400/20"
+                      style={{ animationDuration: '8s' }}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
-              
-              <div className="absolute top-12 right-12 text-teal-400 animate-pulse">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div className="absolute bottom-24 left-10 text-emerald-400/80 animate-bounce" style={{ animationDuration: '3s' }}>
-                <Leaf className="w-3 h-3" />
+
+              <div className="absolute right-12 top-12 animate-pulse text-teal-400">
+                <Sparkles className="h-4 w-4" />
               </div>
             </div>
 
-            {/* Current Plant species badge in top right */}
-            <div className="absolute top-4 left-4 p-2 px-3 rounded-full bg-zinc-900/5 dark:bg-white/5 border border-zinc-250/20 flex items-center gap-1.5 text-[10px] font-bold font-mono">
-              <Sprout className="w-3.5 h-3.5 text-emerald-500" />
-              <span>{activeSpecies.name}</span>
+            <div className="absolute left-4 top-4 rounded-full border border-zinc-200/20 bg-zinc-900/5 px-3 py-2 text-[10px] font-bold">
+              <div className="flex items-center gap-1">
+                <Sprout className="h-3 w-3 text-emerald-500" />
+                <span>{activeSpecies.name}</span>
+              </div>
             </div>
 
-            <div className="absolute top-4 right-4 p-2 px-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[10px] font-bold font-mono">
+            <div className="absolute right-4 top-4 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[10px] font-bold text-emerald-600">
               Level {profile.level} • {currentStage.stage}
             </div>
 
-            {/* SVG Interactive Planter Visual */}
-            <div className="w-64 h-64 flex items-end justify-center relative mt-6">
-              
-              {/* Dynamic Soil / Pot Container */}
-              <div className="absolute bottom-0 w-36 h-10 bg-gradient-to-r from-zinc-700 to-zinc-800 dark:from-zinc-850 dark:to-zinc-900 rounded-b-xl border-t-4 border-emerald-800 shadow-lg flex flex-col items-center justify-center">
-                <span className="text-[8px] tracking-widest text-zinc-500 dark:text-zinc-300 font-mono uppercase font-black">TERRA CO₂ BASE</span>
+            <div className="relative mt-6 flex h-64 w-64 items-end justify-center">
+              <div className="absolute bottom-0 flex h-10 w-36 items-center justify-center rounded-b-xl border-t-4 border-emerald-800 bg-gradient-to-r from-zinc-700 to-zinc-800 shadow-lg">
+                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-300">
+                  Terra CO₂ Base
+                </span>
               </div>
 
-              {/* Trunk and leaves drawn dynamically inside SVG based on score */}
-              <svg className="w-56 h-56 z-10 select-none pb-4" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Main Stem trunk growing taller and branching out higher with points */}
-                
-                {/* Leaves unfolding based on user points milestone checkpoints */}
+              <svg
+                className="z-10 h-56 w-56 select-none pb-4"
+                viewBox="0 0 100 100"
+                aria-label="Plant growth visualization"
+              >
+                <line
+                  x1="50"
+                  y1="90"
+                  x2="50"
+                  y2="40"
+                  stroke="#16A34A"
+                  strokeWidth="3"
+                />
+
                 {score >= 20 && (
                   <motion.path
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     d="M 50 75 Q 40 70 42 66 Q 50 71 50 75"
                     fill="#10B981"
-                    className="animate-pulse"
                   />
                 )}
 
@@ -226,143 +368,187 @@ export const EarthBloomPage = React.memo(function EarthBloomPage({
                   />
                 )}
 
-                {score >= 120 && (
-                  <motion.g id="sapling-foliage">
-                    <circle cx="34" cy="38" r="4" fill="#34D399" />
-                    <circle cx="62" cy="30" r="5" fill="#10B981" />
-                  </motion.g>
+                {score >= 150 && (
+                  <>
+                    <circle
+                      cx="34"
+                      cy="38"
+                      r="4"
+                      fill="#34D399"
+                    />
+                    <circle
+                      cx="62"
+                      cy="30"
+                      r="5"
+                      fill="#10B981"
+                    />
+                  </>
                 )}
 
                 {score >= 250 && (
-                  <motion.g id="flowering-canopy" className="origin-center animate-bounce" style={{ animationDuration: '4s' }}>
-                    {/* Floating pink flowers on fuchsia/teal species triggers */}
-                    <circle cx="27" cy="28" r="6" fill="#F43F5E" />
-                    <circle cx="73" cy="17" r="7" fill="#F43F5E" />
-                    {/* Little yellow stamen dots */}
-                    <circle cx="27" cy="28" r="2" fill="#FBBF24" />
-                    <circle cx="73" cy="17" r="2" fill="#FBBF24" />
-                  </motion.g>
+                  <>
+                    <circle
+                      cx="27"
+                      cy="28"
+                      r="6"
+                      fill="#F43F5E"
+                    />
+                    <circle
+                      cx="73"
+                      cy="17"
+                      r="7"
+                      fill="#F43F5E"
+                    />
+                  </>
                 )}
 
                 {score >= 400 && (
-                  <motion.g id="golden-oracle-wings">
-                    <circle cx="48" cy="18" r="8" fill="#FBBF24" className="opacity-80 animate-pulse" />
-                    <path d="M 48 18 L 48 8 M 48 18 L 38 18 M 48 18 L 58 18" stroke="#FBBF24" strokeWidth="1" />
-                  </motion.g>
+                  <>
+                    <circle
+                      cx="48"
+                      cy="18"
+                      r="8"
+                      fill="#FBBF24"
+                    />
+                  </>
                 )}
               </svg>
 
-              {/* Live bloom multipliers based on completion state */}
-              <div className="absolute bottom-12 flex items-center justify-center gap-1 bg-zinc-900/85 backdrop-blur-md text-white rounded-full p-2 px-3 border border-zinc-800 text-[10px] font-mono shadow-xl z-20">
-                <Leaf className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>Adopted: <strong className="text-emerald-400">{adoptedMealsCount} meals</strong></span>
-                <span className="text-zinc-600">|</span>
-                <span>Habits: <strong className="text-teal-400">{completedHabitsCount} log</strong></span>
+              <div className="absolute bottom-12 z-20 rounded-full border border-zinc-800 bg-zinc-900/85 px-3 py-2 text-[10px] text-white backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                  <span>
+                    Meals:
+                    <strong className="ml-1 text-emerald-400">
+                      {adoptedMealsCount}
+                    </strong>
+                  </span>
+
+                  <span>|</span>
+
+                  <span>
+                    Habits:
+                    <strong className="ml-1 text-teal-400">
+                      {completedHabitsCount}
+                    </strong>
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Bottom Status feedback display */}
-            <div className="w-full text-center mt-5 p-3 bg-zinc-900/5 dark:bg-white/5 border border-zinc-200/40 dark:border-zinc-850/50 rounded-xl space-y-1">
-              <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">{bloomMessage}</p>
-              <p className="text-[10px] text-zinc-500 dark:text-zinc-300 font-light">{activeSpecies.description}</p>
+            <div className="mt-5 w-full rounded-xl border border-zinc-200/40 bg-zinc-900/5 p-3 text-center dark:border-zinc-800/50 dark:bg-white/5">
+              <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                {bloomMessage}
+              </p>
+
+              <p className="mt-1 text-[10px] font-light text-zinc-500 dark:text-zinc-300">
+                {activeSpecies.description}
+              </p>
             </div>
           </Card>
         </div>
 
-        {/* Nurturing Dashboard Controls Panel */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
-          <Card className="p-5 space-y-4">
-            <div className="pb-3 border-b border-zinc-150 dark:border-zinc-800 flex items-center gap-2">
-              <Sparkles className="w-4.5 h-4.5 text-emerald-500" />
-              <h2 className="text-xs font-extrabold uppercase tracking-widest text-zinc-800 dark:text-zinc-100">Planter Interactions</h2>
-            </div>
-            
-            <p className="text-xs text-zinc-500 dark:text-zinc-300 font-light leading-relaxed">
-              Interact with your plant to trigger high-fidelity visual simulations! Manual interactions do not award XP. True ecosystem growth is powered strictly by completing real sustainable behaviors across Carbon Buddy modules.
-            </p>
+        <div className="flex flex-col gap-6 lg:col-span-5">
+          <Card className="space-y-4 p-5">
+            <h2 className="text-xs font-bold uppercase tracking-widest">
+              Plant Interactions
+            </h2>
 
-            <div className="space-y-3 pt-2">
+            <div className="space-y-3">
               <Button
                 variant="primary"
-                className="w-full flex justify-between items-center py-3 bg-sky-500/10 hover:bg-sky-500/15 text-sky-600 border border-sky-500/20 rounded-xl transition-all"
                 onClick={handleWater}
-                isLoading={watering}
-                aria-label="Water the plant to trigger hydration animation"
+                disabled={watering}
+                aria-label="Water plant"
+                className="w-full"
               >
-                <div className="flex items-center gap-2 text-xs font-bold">
-                  <Droplets className="w-4 h-4 text-sky-500" />
-                  <span>Nurture: Hydrate Plant</span>
-                </div>
-                <span className="text-[10px] font-mono text-sky-450 dark:text-sky-500/80 font-bold uppercase tracking-wider">Aesthetic Effect</span>
+                <Droplets className="mr-2 h-4 w-4" />
+                Hydrate Plant
               </Button>
 
               <Button
                 variant="primary"
-                className="w-full flex justify-between items-center py-3 bg-amber-500/10 hover:bg-amber-500/15 text-amber-600 border border-amber-500/20 rounded-xl transition-all"
                 onClick={handleSunlight}
-                isLoading={sunning}
-                aria-label="Expose the plant to sunlight to trigger photosynthesis animation"
+                disabled={sunning}
+                aria-label="Give sunlight"
+                className="w-full"
               >
-                <div className="flex items-center gap-2 text-xs font-bold">
-                  <Sun className="w-4.5 h-4.5 text-amber-500" />
-                  <span>Nurture: Solar Radiation</span>
-                </div>
-                <span className="text-[10px] font-mono text-amber-450 dark:text-amber-500/80 font-bold uppercase tracking-wider">Aesthetic Effect</span>
+                <Sun className="mr-2 h-4 w-4" />
+                Solar Exposure
               </Button>
 
               <Button
                 variant="primary"
-                className="w-full flex justify-between items-center py-3 bg-emerald-500/10 hover:bg-emerald-500/15 text-emerald-600 border border-emerald-500/20 rounded-xl transition-all"
                 onClick={handleCompost}
-                isLoading={composting}
-                aria-label="Add organic compost to the plant"
+                disabled={composting}
+                aria-label="Add compost"
+                className="w-full"
               >
-                <div className="flex items-center gap-2 text-xs font-bold">
-                  <Sparkles className="w-4 h-4 text-emerald-500" />
-                  <span>Nurture: Add Organic Compost</span>
-                </div>
-                <span className="text-[10px] font-mono text-emerald-450 dark:text-emerald-500/80 font-bold uppercase tracking-wider">Aesthetic Effect</span>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Organic Compost
               </Button>
             </div>
           </Card>
 
-          {/* Species directory */}
-          <Card className="p-5 space-y-3">
-            <h3 className="text-xs font-extrabold uppercase tracking-widest text-zinc-500 dark:text-zinc-550">Terrarium Milestones</h3>
-            <div className="space-y-2 max-h-[170px] overflow-y-auto pr-1">
-              {speciesList.map((spec, idx) => {
-                const isUnlocked = score >= spec.requiredXP;
+          <Card className="space-y-3 p-5">
+            <h3 className="text-xs font-bold uppercase tracking-widest">
+              Growth Milestones
+            </h3>
+
+            <div className="space-y-2">
+              {SPECIES_LIST.map((species) => {
+                const unlocked =
+                  score >= species.requiredXP;
+
                 return (
-                  <div 
-                    key={spec.id} 
-                    className={`p-2.5 rounded-xl border flex items-center justify-between text-xs transition-colors ${
-                      isUnlocked 
-                        ? 'bg-zinc-50 dark:bg-zinc-950 border-emerald-500/30' 
-                        : 'bg-zinc-100/30 dark:bg-zinc-950/20 border-zinc-200 dark:border-zinc-850 opacity-50'
-                    }`}
+                  <div
+                    key={species.id}
+                    className={`rounded-xl border p-3 ${unlocked
+                      ? 'border-emerald-500/30 bg-zinc-50 dark:bg-zinc-950'
+                      : 'border-zinc-200 bg-zinc-100/20 opacity-60 dark:border-zinc-800'
+                      }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className={`p-1.5 rounded-lg ${isUnlocked ? 'bg-emerald-500/10 text-emerald-600' : 'bg-zinc-200 text-zinc-500'}`}>
-                        {isUnlocked ? <Flower className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {unlocked ? (
+                          <Flower className="h-4 w-4 text-emerald-500" />
+                        ) : (
+                          <ShieldCheck className="h-4 w-4 text-zinc-500" />
+                        )}
+
+                        <span className="text-xs font-semibold">
+                          {species.name}
+                        </span>
                       </div>
-                      <div>
-                        <p className={`font-bold ${isUnlocked ? 'text-zinc-800 dark:text-zinc-150' : 'text-zinc-500'}`}>{spec.name}</p>
-                        <p className="text-[10px] text-zinc-500 font-light truncate max-w-[200px]">{spec.description}</p>
-                      </div>
+
+                      <span className="text-[10px] text-zinc-500">
+                        {unlocked
+                          ? 'Unlocked'
+                          : `${species.requiredXP} XP`}
+                      </span>
                     </div>
-                    <span className="text-[9px] font-mono font-bold text-zinc-500">
-                      {isUnlocked ? 'Unlocked' : `${spec.requiredXP} XP`}
-                    </span>
                   </div>
                 );
               })}
             </div>
+
+            <div className="pt-2">
+              <div className="mb-1 flex justify-between text-[11px]">
+                <span>Growth Progress</span>
+                <span>{growthPercentage}%</span>
+              </div>
+
+              <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-700"
+                  style={{
+                    width: `${growthPercentage}%`,
+                  }}
+                />
+              </div>
+            </div>
           </Card>
         </div>
-
       </div>
-
     </div>
   );
 });
-

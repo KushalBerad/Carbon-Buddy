@@ -1,9 +1,9 @@
-import { ButtonHTMLAttributes, HTMLAttributes, ReactNode, MouseEventHandler, CSSProperties } from 'react';
+import { CSSProperties, MouseEventHandler, ReactNode } from 'react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'accent';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps {
   id?: string;
   children?: ReactNode;
   variant?: ButtonVariant;
@@ -15,11 +15,15 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   disabled?: boolean;
   onClick?: MouseEventHandler<HTMLButtonElement>;
   style?: CSSProperties;
+
+  title?: string;
+  type?: 'button' | 'submit' | 'reset';
+
+  "aria-label"?: string;
 }
 
-export interface CardProps extends HTMLAttributes<HTMLDivElement> {
+export interface CardProps {
   id?: string;
-  key?: any;
   children?: ReactNode;
   interactive?: boolean;
   outlined?: boolean;
@@ -27,6 +31,12 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   className?: string;
   onClick?: MouseEventHandler<HTMLDivElement>;
   style?: CSSProperties;
+
+  title?: string;
+  role?: string;
+  tabIndex?: number;
+
+  "aria-label"?: string;
 }
 
 export interface ProgressRingProps {
@@ -54,7 +64,6 @@ export interface StatCardProps {
 
 export interface HabitToggleProps {
   id?: string;
-  key?: any;
   label: string;
   carbonOffsetGrams: number;
   moneySaved?: number;

@@ -1,84 +1,204 @@
+/**
+ * Carbon Buddy Weekly Reflection Store
+ *
+ * Responsible for:
+ * - AI-generated sustainability reflections
+ * - Carbon footprint performance analysis
+ * - Weekly environmental impact reporting
+ * - Eco habit behavioral feedback generation
+ *
+ * Uses persistent Zustand state management.
+ */
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { WeeklyReflection } from '../types';
 import { useUserStore } from './userStore';
 
-interface ReflectionState {
-  reflections: WeeklyReflection[];
-  isGeneratingReflection: boolean;
-  generateReflection: () => Promise<void>;
-  resetReflections: () => void;
-}
+/**
+ * Sustainability scoring defaults.
+ */
+const DEFAULT_DIET_SCORE = 85;
+const DEFAULT_COMMUTE_SCORE = 80;
+const DEFAULT_ENERGY_SCORE = 75;
+const SIMULATION_DELAY_MS = 1000;
 
-const initialReflections: WeeklyReflection[] = [
+/**
+ * Default starter reflection dataset.
+ */
+const INITIAL_REFLECTIONS: WeeklyReflection[] = [
   {
-    weekId: 'ref-init',
+    weekId: 'reflection-initial',
     date: 'June 12, 2026',
     dietScore: 75,
     commuteScore: 80,
     energyScore: 68,
-    aiFeedback: "You are doing great on public transit, alex! To maximize score factors, consider turning off heavy standby chargers and reducing beef consumption. That will easily double your daily carbon offset.",
-  }
+    aiFeedback:
+      'Strong sustainability progress detected. Public transit usage and mindful energy consumption are improving your long-term carbon reduction impact.',
+  },
 ];
 
+/**
+ * Reflection state contract.
+ */
+interface ReflectionState {
+  reflections: WeeklyReflection[];
+  isGeneratingReflection: boolean;
+
+  generateReflection: () => Promise<void>;
+  resetReflections: () => void;
+}
+
+/**
+ * Generates standardized reflection date string.
+ */
+const generateReflectionDate = (): string =>
+  new Date().toLocaleDateString([], {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+/**
+ * Carbon Buddy reflection persistence store.
+ */
 export const useReflectionStore = create<ReflectionState>()(
   persist(
     (set) => ({
-      reflections: initialReflections,
+      reflections: INITIAL_REFLECTIONS,
       isGeneratingReflection: false,
+
+      /**
+       * Generates AI-powered sustainability reflection.
+       */
       generateReflection: async () => {
-        const profile = useUserStore.getState().profile;
-        if (!profile) return;
+        const activeUserProfile =
+          useUserStore.getState().profile;
 
-        set({ isGeneratingReflection: true });
+        if (!activeUserProfile) {
+          return;
+        }
+
+        set({
+          isGeneratingReflection: true,
+        });
+
         try {
-          const response = await fetch('/api/gemini/reflection', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: profile.name,
-              dietPreference: profile.dietPreference,
-              commuteMode: profile.commuteMode,
-              totalSavedCarbon: profile.carbonSavedTotal,
-            }),
-          });
+          const reflectionApiResponse = await fetch(
+            '/api/gemini/reflection',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                name: activeUserProfile.name,
+                dietPreference:
+                  activeUserProfile.dietPreference,
+                commuteMode:
+                  activeUserProfile.commuteMode,
+                totalSavedCarbon:
+                  activeUserProfile.carbonSavedTotal,
+              }),
+            }
+          );
 
-          const data = await response.json();
-          if (data.error) {
-            throw new Error(data.error);
+          const reflectionPayload =
+            await reflectionApiResponse.json();
+
+          if (reflectionPayload.error) {
+            throw new Error(
+              reflectionPayload.error
+            );
           }
 
-          const newReport: WeeklyReflection = {
-            weekId: `ref-${Date.now()}`,
-            date: new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
-            dietScore: data.scoreDiet || 85,
-            commuteScore: data.scoreCommute || 80,
-            energyScore: data.scoreEnergy || 75,
-            aiFeedback: data.aiFeedback || 'Fabulous cycle! Leverage travel commutes to continue streak multipliers.',
-          };
+          const generatedReflection: WeeklyReflection =
+            {
+              weekId: `reflection-${Date.now()}`,
+              date: generateReflectionDate(),
 
-          set((state) => ({ reflections: [newReport, ...state.reflections] }));
-        } catch (err) {
-          console.warn('Reflection proxy fell back to smart simulation:', err);
+              dietScore:
+                reflectionPayload.scoreDiet ??
+                DEFAULT_DIET_SCORE,
 
-          const simulatedReport: WeeklyReflection = {
-            weekId: `ref-${Date.now()}`,
-            date: new Date().toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
-            dietScore: profile.dietPreference === 'vegan' ? 95 : profile.dietPreference === 'vegetarian' ? 82 : 65,
-            commuteScore: profile.commuteMode === 'transit' ? 90 : profile.commuteMode === 'hybrid' ? 70 : 45,
-            energyScore: 78,
-            aiFeedback: `Splendid weekly progress, ${profile.name}! Swapping transit options and logging milestones saved a massive ${profile.carbonSavedTotal}g of CO₂ this cycle. We recommend keeping energy power strips unplugged for more cost benefits.`,
-          };
+              commuteScore:
+                reflectionPayload.scoreCommute ??
+                DEFAULT_COMMUTE_SCORE,
+
+              energyScore:
+                reflectionPayload.scoreEnergy ??
+                DEFAULT_ENERGY_SCORE,
+
+              aiFeedback:
+                reflectionPayload.aiFeedback ??
+                'Excellent eco performance. Continue sustainable daily habits to maximize your environmental impact score.',
+            };
+
+          set((state) => ({
+            reflections: [
+              generatedReflection,
+              ...state.reflections,
+            ],
+          }));
+        } catch (reflectionError) {
+          console.warn(
+            'AI reflection unavailable. Using local sustainability simulation.',
+            reflectionError
+          );
+
+          const simulatedReflection: WeeklyReflection =
+            {
+              weekId: `reflection-${Date.now()}`,
+              date: generateReflectionDate(),
+
+              dietScore:
+                activeUserProfile.dietPreference ===
+                'vegan'
+                  ? 95
+                  : activeUserProfile.dietPreference ===
+                    'vegetarian'
+                  ? 82
+                  : 65,
+
+              commuteScore:
+                activeUserProfile.commuteMode ===
+                'transit'
+                  ? 90
+                  : activeUserProfile.commuteMode ===
+                    'hybrid'
+                  ? 70
+                  : 45,
+
+              energyScore: 78,
+
+              aiFeedback: `Great weekly sustainability progress, ${activeUserProfile.name}. Your environmentally conscious actions prevented approximately ${activeUserProfile.carbonSavedTotal}g of CO₂ emissions. Continue reducing unnecessary energy consumption to improve future carbon savings.`,
+            };
 
           setTimeout(() => {
-            set((state) => ({ reflections: [simulatedReport, ...state.reflections] }));
-          }, 1000);
+            set((state) => ({
+              reflections: [
+                simulatedReflection,
+                ...state.reflections,
+              ],
+            }));
+          }, SIMULATION_DELAY_MS);
         } finally {
-          set({ isGeneratingReflection: false });
+          set({
+            isGeneratingReflection: false,
+          });
         }
       },
-      resetReflections: () => set({ reflections: initialReflections, isGeneratingReflection: false }),
+
+      /**
+       * Resets reflection analytics state.
+       */
+      resetReflections: () =>
+        set({
+          reflections: INITIAL_REFLECTIONS,
+          isGeneratingReflection: false,
+        }),
     }),
+
     {
       name: 'carbon-buddy-reflection-store',
     }

@@ -11,18 +11,33 @@ export function ProgressRing({
   label,
   subLabel,
 }: ProgressRingProps) {
-  // Clamp percentage between 0 and 100
-  const clampedPercentage = Math.max(0, Math.min(100, percentage));
-  
+  const normalizedPercentage = Math.min(100, Math.max(0, percentage));
+
   const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (clampedPercentage / 100) * circumference;
+  const circumference = 2 * Math.PI * radius;
+  const progressOffset =
+    circumference - (normalizedPercentage / 100) * circumference;
+
+  const displayLabel =
+    label !== undefined ? label : `${Math.round(normalizedPercentage)}%`;
 
   return (
-    <div id={id} className="relative flex flex-col items-center justify-center font-sans">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg className="w-full h-full -rotate-90">
-          {/* Background circle */}
+    <div
+      id={id}
+      className="relative flex flex-col items-center justify-center font-sans"
+    >
+      <div
+        className="relative"
+        style={{ width: size, height: size }}
+        role="progressbar"
+        aria-label="Carbon progress indicator"
+      >
+        <svg
+          className="h-full w-full -rotate-90"
+          viewBox={`0 0 ${size} ${size}`}
+          role="img"
+          aria-label={`Progress ring showing ${Math.round(normalizedPercentage)}% completion`}
+        >
           <circle
             className={backgroundColorClass}
             strokeWidth={strokeWidth}
@@ -31,13 +46,13 @@ export function ProgressRing({
             cx={size / 2}
             cy={size / 2}
           />
-          {/* Active progress ring */}
+
           <motion.circle
             className={colorClass}
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset }}
+            animate={{ strokeDashoffset: progressOffset }}
             transition={{ duration: 1.2, ease: 'easeOut' }}
             strokeLinecap="round"
             fill="transparent"
@@ -47,19 +62,13 @@ export function ProgressRing({
           />
         </svg>
 
-        {/* Center label block */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
-          {label !== undefined ? (
-            <span className="text-xl font-bold text-zinc-800 dark:text-zinc-100 font-mono">
-              {label}
-            </span>
-          ) : (
-            <span className="text-xl font-bold text-zinc-800 dark:text-zinc-100 font-mono">
-              {Math.round(clampedPercentage)}%
-            </span>
-          )}
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center">
+          <span className="font-mono text-xl font-bold text-zinc-800 dark:text-zinc-100">
+            {displayLabel}
+          </span>
+
           {subLabel && (
-            <span className="text-[10px] text-zinc-500 dark:text-zinc-300 font-medium uppercase tracking-wider mt-0.5">
+            <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-300">
               {subLabel}
             </span>
           )}

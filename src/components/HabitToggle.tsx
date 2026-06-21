@@ -3,6 +3,42 @@ import { AnimatePresence, motion } from 'motion/react';
 import { HabitToggleProps } from '../types';
 import { Card } from './Card';
 
+type HabitCategory = 'transport' | 'food' | 'energy' | 'waste' | 'water';
+
+interface CategoryConfig {
+  icon: React.ReactNode;
+  bg: string;
+  outline: string;
+}
+
+const CATEGORY_CONFIG: Record<HabitCategory, CategoryConfig> = {
+  transport: {
+    icon: <Bike className="w-5 h-5 text-sky-600 dark:text-sky-300" />,
+    bg: 'bg-sky-50 dark:bg-sky-950/40 border-sky-100 dark:border-sky-900/30',
+    outline: 'focus:ring-sky-500/30',
+  },
+  food: {
+    icon: <Utensils className="w-5 h-5 text-amber-600 dark:text-amber-300" />,
+    bg: 'bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900/30',
+    outline: 'focus:ring-amber-500/30',
+  },
+  energy: {
+    icon: <Zap className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />,
+    bg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-900/30',
+    outline: 'focus:ring-emerald-500/30',
+  },
+  waste: {
+    icon: <Trash2 className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />,
+    bg: 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100 dark:border-indigo-900/30',
+    outline: 'focus:ring-indigo-500/30',
+  },
+  water: {
+    icon: <Droplet className="w-5 h-5 text-blue-600 dark:text-blue-300" />,
+    bg: 'bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900/30',
+    outline: 'focus:ring-blue-500/30',
+  },
+};
+
 export function HabitToggle({
   id,
   label,
@@ -12,36 +48,7 @@ export function HabitToggle({
   onChange,
   category = 'energy',
 }: HabitToggleProps) {
-  // Config for styles/icons based on category
-  const categoryConfig = {
-    transport: {
-      icon: <Bike className="w-5 h-5 text-sky-600 dark:text-sky-300" />,
-      bg: 'bg-sky-50 dark:bg-sky-950/40 border-sky-100 dark:border-sky-900/30',
-      outline: 'focus:ring-sky-500/30',
-    },
-    food: {
-      icon: <Utensils className="w-5 h-5 text-amber-600 dark:text-amber-300" />,
-      bg: 'bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900/30',
-      outline: 'focus:ring-amber-500/30',
-    },
-    energy: {
-      icon: <Zap className="w-5 h-5 text-emerald-600 dark:text-emerald-300" />,
-      bg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-900/30',
-      outline: 'focus:ring-emerald-500/30',
-    },
-    waste: {
-      icon: <Trash2 className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />,
-      bg: 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100 dark:border-indigo-900/30',
-      outline: 'focus:ring-indigo-500/30',
-    },
-    water: {
-      icon: <Droplet className="w-5 h-5 text-blue-600 dark:text-blue-300" />,
-      bg: 'bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900/30',
-      outline: 'focus:ring-blue-500/30',
-    },
-  };
-
-  const config = categoryConfig[category] || categoryConfig.energy;
+  const config = CATEGORY_CONFIG[category];
 
   return (
     <Card
@@ -54,9 +61,10 @@ export function HabitToggle({
       } relative overflow-hidden`}
     >
       <div className="flex items-center justify-between gap-4">
-        {/* Category Icon and Label */}
         <div className="flex items-center gap-3.5">
-          <div className={`p-2.5 rounded-xl border ${config.bg} flex items-center justify-center shrink-0`}>
+          <div
+            className={`p-2.5 rounded-xl border ${config.bg} flex items-center justify-center shrink-0`}
+          >
             {config.icon}
           </div>
 
@@ -71,11 +79,11 @@ export function HabitToggle({
               {label}
             </span>
 
-            {/* Metric badges */}
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-md font-mono">
                 -{carbonOffsetGrams}g CO₂
               </span>
+
               {moneySaved > 0 && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 rounded-md font-mono">
                   +${moneySaved.toFixed(2)}
@@ -85,8 +93,8 @@ export function HabitToggle({
           </div>
         </div>
 
-        {/* Dynamic Tap Checkbox */}
         <button
+          type="button"
           onClick={() => onChange(!checked)}
           aria-label={checked ? 'Mark habit as incomplete' : 'Mark habit as complete'}
           className={`relative w-8 h-8 rounded-xl border outline-none transition-all flex items-center justify-center cursor-pointer ${
@@ -103,17 +111,17 @@ export function HabitToggle({
                 exit={{ scale: 0.3, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 20 }}
               >
-                <Check className="w-5 h-5 stroke-[3]" />
+                <Check className="w-5 h-5 stroke-3" />
               </motion.div>
             )}
           </AnimatePresence>
         </button>
       </div>
 
-      {/* Decorative success wave ripple on check */}
       <AnimatePresence>
         {checked && (
           <motion.div
+            aria-hidden="true"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 0.05, scale: 2 }}
             exit={{ opacity: 0 }}
